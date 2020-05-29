@@ -30,7 +30,7 @@ and double check the provisioned nodes running:
 
 >   metalsmith -c "Node Name" -c "IP Addresses" list
 
-> Additional info can be found [here](https://github.com/fultonj/victoria/tree/master/metalsmith)
+Additional info can be found [here](https://github.com/fultonj/victoria/tree/master/metalsmith)
 
 3. Overcloud deploy --stack-only
 
@@ -77,11 +77,13 @@ and double check the provisioned nodes running:
             --stack $STACK
 ```
 
-6. Verify the nodes are ready
+6. Double check the overcloud nodes are ready
 
->    ansible -m ping inventory.yaml all
+```console
+    ansible -m ping inventory.yaml all
+```
 
-7. Run the first overcloud deployment stage to configure the storage/storageMgmt network
+7. Run the first overcloud deployment stage: this configure the Storage/StorageMgmt network
 
 ```console
     ansible-playbook -i tripleo-ansible-inventory.yaml deploy_steps_playbook.yaml \
@@ -90,16 +92,16 @@ and double check the provisioned nodes running:
 
 8. Double check the storage network is properly configured and nodes are reacheable
 
->    ansible -m shell -b -a "ip -o -4 a | grep -E 'vlan1(1|2)'" -i tripleo-ansible-inventory.yaml mons,osds
+```console
+    ansible -m shell -b -a "ip -o -4 a | grep -E 'vlan1(1|2)'" -i tripleo-ansible-inventory.yaml mons,osds
+```
 
-9. Clone [this repo]() into config-download/cephadm and run the playbooks in the following order:
-
->
-    1. undercloud_prepare: this will link the ceph compatible inventory
+9. Clone [this repo](https://github.com/fmount/tripleo-cephadm-victoria) into
+`config-download/cephadm` and run the playbooks in the following order:
+ - undercloud_prepare: this will link the ceph compatible inventory
 
 >        $ ansible-playbook undercloud_prepare.yaml
-
-    2. bootstrap playbook: this will boot a minimal ceph cluster (using the first mon)
+ - bootstrap playbook: this will boot a minimal ceph cluster (using the first mon)
 
 >        $ ansible-playbook -i tripleo-ansible-inventory.yaml cephadm_site_container.yaml
 
@@ -119,8 +121,8 @@ spec and push it via `ceph orch` cli.
 
 ## NOTE
 
-[cephadm spec apply PR](https://github.com/ceph/ceph/pull/34879)
-[adopt ceph-ansible cluster](https://github.com/ceph/ceph-ansible/pull/5269/files)
+- [cephadm spec apply PR](https://github.com/ceph/ceph/pull/34879)
+- [adopt ceph-ansible cluster](https://github.com/ceph/ceph-ansible/pull/5269/files)
 
 
 ## TODO
@@ -128,55 +130,3 @@ spec and push it via `ceph orch` cli.
 1. Design a playbook to reflect/generate the cephadm spec according to the [PR](https://github.com/ceph/ceph-ansible/pull/34879)
 2. Playbook to scale{up,down} monitors
 3. Playbook to scale{up,down} OSDs
-
-
-[WIP] - Cephadm poc using IR on Upshift
-=======================================
-
-This document assumes you have already configured the upshift project
-used to deploy the environment.
-For more information on this prerequisite see [this document](https://gitlab.cee.***REMOVED***.com/fpantano/upshift-devtools/blob/master/doc/ceph_edge_deploy.md),
-which should cover what you need to have the IR properly configured
-to interact with upshift.
-
-
-## Deploy the instances of the ceph cluster
-
-This will create necessary VMs for your deployment.
-
-    export KEY_PATH=$HOME/.ssh/***REMOVED***_dev
-    ir ***REMOVED*** -v \
-        -o provision.yml \
-        --cloud=fpantano \
-        --prefix=$USER- \
-        --topology-nodes=cephmon:3,cephosd:3 \
-        --topology-network=3_nets_ovb \
-        --provider-network=provider_net_shared_3 \
-        --key-file=$KEY_PATH \
-        --image=rhel-8.1.0-x86_64-latest \
-        --dns=10.11.5.19 \
-        --anti-spoofing=no
-
-Make sure the node has these 3 requirements:
-
-1. ln -s /usr/libexec/platform-python /usr/bin/python3
-2. yum install -y podman, lvm2
-3. mkdir -p /etc/ceph
-4. /etc/hosts should contains all the node names of the cluster
-
-
-Log in into the first mon and download cephadm:
-
-    curl --silent --remote-name --location https://github.com/ceph/ceph/raw/octopus/src/cephadm/cephadm
-    chmod +x cephadm
-
-and run the bootstrap command:
-
-    sudo ./cephadm bootstrap --mon-ip 172.16.1.26
-
-
-## Automate the deployment using TripleO + IR on upshift
-
-1. provision instances (--topology-nodes=bmc:1,ovb_undercloud:1,ovb_controller:1,ovb_compute:1,ovb_ceph:2)
-2. install the undercloud
-3. introspect
