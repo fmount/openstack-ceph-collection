@@ -13,19 +13,16 @@
         name: tripleo_cluster_bootstrap
         tasks_from: bootstrap
       vars:
-        ceph_client: "{{ ceph_cli }}"
         dest_path: "/etc/ceph"
       tags:
         - ceph_bootstrap
         - day1
     # This is going to be deleted as per [PR](https://github.com/ceph/ceph/pull/35195)
-    # allovercloud
     - name: Copy the cephadm key on the Ceph cluster nodes
       include_role:
         name: tripleo_cluster_bootstrap
         tasks_from: copy_cephadm_pubkey
       vars:
-        ceph_client: "{{ ceph_cli }}"
         dest_path: "/etc/ceph"
       tags:
         - ceph_pub_key
