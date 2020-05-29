@@ -100,7 +100,11 @@ Additional info can be found [here](https://github.com/fultonj/victoria/tree/mas
 `config-download/cephadm` and run the playbooks in the following order:
  - undercloud_prepare: this will link the ceph compatible inventory
 
->        $ ansible-playbook undercloud_prepare.yaml
+```console
+    $ ansible-playbook undercloud_prepare.yaml \
+        --extra-vars "tripleo_overcloud_cephadm_home=/home/stack/overcloud/config-download/tripleo-cephadm-victoria/tripleo-operator-cephadm"
+```
+
  - bootstrap playbook: this will boot a minimal ceph cluster (using the first mon)
 
 >        $ ansible-playbook -i tripleo-ansible-inventory.yaml cephadm_site_container.yaml
