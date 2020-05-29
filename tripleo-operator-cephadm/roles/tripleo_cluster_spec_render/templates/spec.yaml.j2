@@ -1,0 +1,16 @@
+{% for service in tripleo_cephadm_services %}
+---
+service_type: {{ service }}
+service_id: {{ service }}
+placement:
+{% if use_pattern %}
+  host_pattern: "{{ service }}*"
+{% elif use_labels %}
+  label: {{ service }}
+{% else %}
+  hosts: 
+{% for host in (groups['ceph_' + service]) %}
+    - {{ host }}
+{% endfor %}
+{% endif %}
+{% endfor %}

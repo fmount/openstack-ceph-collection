@@ -1,0 +1,74 @@
+---
+- hosts: allovercloud
+  vars:
+    cephadm_pkg: "https://download.ceph.com/rpm-octopus/el8/x86_64/cephadm-15.2.2-0.el8.x86_64.rpm"
+    cephadm_bin_home: "/usr/sbin"
+    ceph_public_network: "172.16.11.0/24"
+    ceph_config_home: "/etc/ceph"
+    ceph_dot_conf: "{{ ceph_config_home}}/ceph.conf"
+    ceph_keyring: "{{ ceph_config_home }}/ceph.client.admin.keyring"
+  tasks:
+    - name: Bootstrap the first minimal ceph cluster via cephadm
+      include_role:
+        name: tripleo_cluster_bootstrap
+        tasks_from: bootstrap
+      vars:
+        ceph_client: "{{ ceph_cli }}"
+        dest_path: "/etc/ceph"
+      tags:
+        - ceph_bootstrap
+        - day1
+    # This is going to be deleted as per [PR](https://github.com/ceph/ceph/pull/35195)
+    # allovercloud
+    - name: Copy the cephadm key on the Ceph cluster nodes
+      include_role:
+        name: tripleo_cluster_bootstrap
+        tasks_from: copy_cephadm_pubkey
+      vars:
+        ceph_client: "{{ ceph_cli }}"
+        dest_path: "/etc/ceph"
+      tags:
+        - ceph_pub_key
+        - day1
+    ## POST BOOTSTRAP TASKS
+    - name: Get ceph fsid
+      command: "awk '/fsid/ {print $3}' /etc/ceph/ceph.conf"
+      register: fsid
+      run_once: true
+      changed_when: false
+      delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+    - name: Print fsid
+      debug:
+        msg: "{{ fsid.stdout }}"
+      run_once: true
+      delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+    - name: Set client fact
+      set_fact:
+        ceph_cli: "{{ cephadm_bin_home }}/cephadm shell --fsid {{ fsid.stdout }} -c {{ ceph_dot_conf }} -k {{ ceph_keyring }} -- ceph"
+      run_once: true
+      delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+    - name: Build the Ceph Cluster spec and apply it via orchestrator
+      include_role:
+        name: tripleo_cluster_spec_render
+        tasks_from: build_spec
+      vars:
+        ceph_client: "{{ ceph_cli }}"
+        dest_path: "/etc/ceph"
+      tags:
+        - ceph_spec
+        - day1
+
+    - name: Build the Ceph Cluster spec and apply it via orchestrator
+      include_role:
+        name: tripleo_cluster_spec_apply
+        tasks_from: apply_spec
+      vars:
+        ceph_client: "{{ ceph_cli }}"
+        config_mode: "host"
+        spec_path: "/etc/ceph"
+      tags:
+        - ceph_spec_apply
+        - day1

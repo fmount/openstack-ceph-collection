@@ -1,0 +1,16 @@
+{% for host in groups['all'] %}
+{% if host != 'undercloud' %}
+---
+service_type: host
+addr: {{ host }}
+hostname: {{ hostvars[host]['inventory_hostname'] }}
+labels:
+{% for group in labels %}
+{% if host in groups[group] %}
+{% for label in labels[group] %}
+  - {{ label }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

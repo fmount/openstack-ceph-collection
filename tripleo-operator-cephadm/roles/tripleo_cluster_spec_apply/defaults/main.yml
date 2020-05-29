@@ -1,0 +1,7 @@
+---
+# defaults file for tripleo_cluster_spec_apply
+
+## We can apply the config using host mode or spec mode
+config_mode: "host"
+#config_mode: "spec"
+spec_path: /home/heat-admin

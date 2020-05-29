@@ -1,0 +1,21 @@
+---
+- name: Print the ceph cluster status
+  command: "{{ ceph_client }} orch status"
+  become: true
+  register: c_status
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+  run_once: true
+
+- name: Set spec path
+  set_fact:
+    ceph_spec: "{{ spec_path | default('/etc/ceph/') }}/{{ config_mode }}.yaml" 
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Apply the spec
+  command: "{{ ceph_client }} orch apply -i {{ ceph_spec }}"
+  become: true
+  register: c_result
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+

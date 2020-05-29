@@ -1,0 +1,14 @@
+---
+- name: Add all the Ceph OSDs provisioned in the overcloud
+  command: "{{ ceph_client }} orch host add {{ ansible_hostname }} {{ ansible_hostname}}.ctlplane osd"
+  #run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+  become: true
+
+- name: Deploy all the available osds
+  command: "{{ ceph_client }} orch apply osd --all-available-devices"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+  become: true
+  when: 
+    - all_available_devices | bool 
