@@ -1,0 +1,68 @@
+---
+- name: Get Controller(s) ip addresses on storage the storage network
+  debug:
+    msg: "{{ hostvars[groups.get('mons', {})[0]]['ansible_all_ipv4_addresses'] | ipaddr('172.16.11.0/24') | first }}"
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+  run_once: true
+
+- name: Set Mon ip addr
+  set_fact:
+    mon_ip: "{{ hostvars[groups.get('mons', {})[0]]['ansible_all_ipv4_addresses'] | ipaddr('172.16.11.0/24') | first }}"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: install cephadm
+  package:
+    name: "{{ cephadm_pkg }}"
+  register: result
+  until: result is succeeded
+  become: true
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Ensure /etc/ceph exists
+  file:
+    path: "/etc/ceph"
+    state: "directory"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Set cephadm cmd fact
+  set_fact:
+    cephadm_cmd: "{{ cephadm_bin_home }}/cephadm"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Bootstrap the first minimal ceph cluster
+  shell: "{{ cephadm_cmd }} bootstrap --mon-ip {{ mon_ip }}"
+  register: ceph_is_up
+  become: true
+  ignore_errors: true
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Get ceph fsid
+  command: "awk '/fsid/ {print $3}' /etc/ceph/ceph.conf"
+  register: fsid
+  run_once: true
+  changed_when: false
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Print fsid
+  debug:
+    msg: "{{ fsid.stdout }}"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Set client fact
+  set_fact:
+    ceph_cli: "{{ cephadm_bin_home }}/cephadm shell --fsid {{ fsid.stdout }} -c {{ ceph_dot_conf }} -k {{ ceph_keyring }} -- ceph"
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Set ceph monitors public network (we're going to use this network to deploy additional monitors)
+  command: "{{ ceph_cli }} config set mon public_network {{ ceph_public_network }}"
+  register: result
+  become: true
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"

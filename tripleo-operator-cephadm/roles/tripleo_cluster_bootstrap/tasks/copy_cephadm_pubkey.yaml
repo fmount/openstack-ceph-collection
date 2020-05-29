@@ -1,0 +1,23 @@
+---
+- name: Print mons group
+  debug:
+    msg: "{{ groups.get('mons',{}) }}"
+  run_once: true
+
+- name: Slurp the ceph.pub key
+  slurp:
+    src: "/etc/ceph/ceph.pub"
+  delegate_to: "{{ groups.get('mons',{})[0] }}"
+  run_once: true
+  register: cephadm_pub
+
+- name: Print the retrieved key
+  debug:
+    msg: "{{ cephadm_pub.content | b64decode }}"
+  run_once: true
+
+- name: Spread the key across ceph nodes
+  authorized_key:
+    user: root
+    key: '{{ cephadm_pub.content | b64decode }}'
+  become: true

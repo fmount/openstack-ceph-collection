@@ -1,0 +1,17 @@
+---
+- name: Print the ceph cluster status
+  command: "{{ ceph_client }} orch status"
+  become: true
+  register: c_status
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+
+- name: Render the spec
+  template:
+    src: templates/{{ item }}.j2
+    dest: "{{ dest_path | default('/etc/ceph/') }}/{{ item }}"
+  loop: "{{ ceph_template_list }}"
+  become: true
+  run_once: true
+  delegate_to: "{{ groups.get('mons', {})[0] }}"
+  
