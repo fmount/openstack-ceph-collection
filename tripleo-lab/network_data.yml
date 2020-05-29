@@ -1,0 +1,60 @@
+- name: Storage
+  vip: true
+  vlan: 11
+  name_lower: storage_cloud_0
+  service_net_map_replace: storage
+  ip_subnet: '172.16.11.0/24'
+  allocation_pools: [{'start': '172.16.11.4', 'end': '172.16.11.250'}]
+  ipv6_subnet: 'fd00:fd00:fd00:1001::/64'
+  ipv6_allocation_pools: [{'start': 'fd00:fd00:fd00:1001::10', 'end': 'fd00:fd00:fd00:1001:ffff:ffff:ffff:fffe'}]
+- name: StorageMgmt
+  name_lower: storage_mgmt_cloud_0
+  service_net_map_replace: storage_mgmt
+  vip: true
+  vlan: 12
+  ip_subnet: '172.16.12.0/24'
+  allocation_pools: [{'start': '172.16.12.4', 'end': '172.16.12.250'}]
+  ipv6_subnet: 'fd00:fd00:fd00:1002::/64'
+  ipv6_allocation_pools: [{'start': 'fd00:fd00:fd00:1002::10', 'end': 'fd00:fd00:fd00:1002:ffff:ffff:ffff:fffe'}]
+- name: InternalApi
+  name_lower: internal_api_cloud_0
+  service_net_map_replace: internal_api
+  vip: true
+  vlan: 13
+  ip_subnet: '172.16.13.0/24'
+  allocation_pools: [{'start': '172.16.13.4', 'end': '172.16.13.250'}]
+  ipv6_subnet: 'fd00:fd00:fd00:1003::/64'
+  ipv6_allocation_pools: [{'start': 'fd00:fd00:fd00:1003::10', 'end': 'fd00:fd00:fd00:1003:ffff:ffff:ffff:fffe'}]
+- name: Tenant
+  vip: false  # Tenant network does not use VIPs
+  name_lower: tenant_cloud_0
+  service_net_map_replace: tenant
+  vlan: 14
+  ip_subnet: '172.16.14.0/24'
+  allocation_pools: [{'start': '172.16.14.4', 'end': '172.16.14.250'}]
+  # Note that tenant tunneling is only compatible with IPv4 addressing at this time.
+  ipv6_subnet: 'fd00:fd00:fd00:1004::/64'
+  ipv6_allocation_pools: [{'start': 'fd00:fd00:fd00:1004::10', 'end': 'fd00:fd00:fd00:1004:ffff:ffff:ffff:fffe'}]
+- name: External
+  vip: true
+  name_lower: external_cloud_0
+  service_net_map_replace: external
+  vlan: 19
+  ip_subnet: '10.20.1.0/24'
+  allocation_pools: [{'start': '10.20.1.15', 'end': '10.20.1.100'}]
+  gateway_ip: '10.20.1.1'
+  ipv6_subnet: '2001:db8:fd00:1100::/64'
+  ipv6_allocation_pools: [{'start': '2001:db8:fd00:1100::10', 'end': '2001:db8:fd00:1100:ffff:ffff:ffff:fffe'}]
+  gateway_ipv6: '2001:db8:fd00:1100::1'
+- name: Management
+  # Management network is enabled by default for backwards-compatibility, but
+  # is not included in any roles by default. Add to role definitions to use.
+  enabled: true
+  vip: false  # Management network does not use VIPs
+  name_lower: management_cloud_0
+  service_net_map_replace: management
+  vlan: 16
+  ip_subnet: '10.0.21.0/24'
+  allocation_pools: [{'start': '10.0.21.4', 'end': '10.0.21.250'}]
+  ipv6_subnet: 'fd00:fd00:fd00:1005::/64'
+  ipv6_allocation_pools: [{'start': 'fd00:fd00:fd00:1005::10', 'end': 'fd00:fd00:fd00:1005:ffff:ffff:ffff:fffe'}]
