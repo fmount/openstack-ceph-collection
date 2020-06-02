@@ -96,24 +96,24 @@ Additional info can be found [here](https://github.com/fultonj/victoria/tree/mas
     ansible -m shell -b -a "ip -o -4 a | grep -E 'vlan1(1|2)'" -i tripleo-ansible-inventory.yaml mons,osds
 ```
 
-9. Clone [this repo](https://github.com/fmount/tripleo-cephadm-victoria) into
-`config-download/cephadm` and run the playbooks in the following order:
- - undercloud_prepare: this will link the ceph compatible inventory
+9. Clone [this repo](https://github.com/fmount/tripleo-cephadm-victoria) into `config-download`, then:
 
 ```console
-    $ ansible-playbook undercloud_prepare.yaml \
-        --extra-vars "tripleo_overcloud_cephadm_home=/home/stack/overcloud/config-download/tripleo-cephadm-victoria/tripleo-operator-cephadm"
+    pushd tripleo-ceph
+    ln -s ../../tripleo-ansible-inventory.yaml inventory.yaml
+```
+   and run the day1 playbook; this will boot a minimal ceph cluster (using the first mon) and configure
+   it properly
+
+```console
+    ansible-playbook -i inventory.yaml site.yaml
+    popd
 ```
 
- - bootstrap playbook: this will boot a minimal ceph cluster (using the first mon)
-
->        $ ansible-playbook -i tripleo-ansible-inventory.yaml cephadm_site_container.yaml
-
-The purpose of `cephadm_site_container` playbook is to orchestrate the cephadm commands
-to produce a minimal running cluster, generate the spec/host yaml that describe the Ceph
-cluster and add all the remaining nodes on it. This playbook is built using the
-tripleo-operator approach, so for each action there is a role associated with a few
-configurable parameters.
+The purpose of `site.yaml` playbook is to orchestrate the cephadm commands to produce a minimal running
+cluster, generate the spec/host yaml that describe the Ceph cluster and add all the remaining nodes.
+This playbook is built using the `tripleo-operator` approach, so for each action there is a role associated
+with a few, configurable, parameters.
 
 
 At this point we have the minimal ceph cluster up && running and we should be able to add
@@ -121,6 +121,17 @@ resources on it.
 Right now the [cephadm --spec [file] command](https://github.com/ceph/ceph/pull/34879) is
 not available, so we need a few, more, playbooks to create additional resources, built the
 spec and push it via `ceph orch` cli.
+
+10. After the spec above has been completed, the TripleO deployment flow can be resumed by running:
+
+```console
+    ansible-playbook \
+    -v -b -i tripleo-ansible-inventory.yaml \
+         --private-key ~/.ssh/id_rsa_tripleo \
+         --tags step2,step3,step4,step5,post_deploy_steps \
+         --skip-tags run_ceph_ansible,opendev-validation \
+    deploy_steps_playbook.yaml
+```
 
 
 ## NOTE
