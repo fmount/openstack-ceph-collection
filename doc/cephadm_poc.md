@@ -80,13 +80,13 @@ Additional info can be found [here](https://github.com/fultonj/victoria/tree/mas
 6. Double check the overcloud nodes are ready
 
 ```console
-    ansible -m ping inventory.yaml all
+    ansible -m ping -i tripleo-ansible-inventory.yaml all
 ```
 
 7. Run the first overcloud deployment stage: this configure the Storage/StorageMgmt network
 
 ```console
-    ansible-playbook -i tripleo-ansible-inventory.yaml deploy_steps_playbook.yaml \
+    ansible-playbook -i tripleo-ansible-inventory.yaml -b deploy_steps_playbook.yaml \
         --skip-tags step2,step3,step4,step5,opendev-validation
 ```
 
