@@ -127,7 +127,6 @@ spec and push it via `ceph orch` cli.
 ```console
     ansible-playbook \
     -v -b -i tripleo-ansible-inventory.yaml \
-         --private-key ~/.ssh/id_rsa_tripleo \
          --tags step2,step3,step4,step5,post_deploy_steps \
          --skip-tags run_ceph_ansible,opendev-validation \
     deploy_steps_playbook.yaml
