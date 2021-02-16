@@ -16,7 +16,6 @@
 
 
 import argparse
-import configparser
 import yaml
 import json
 import sys
@@ -33,8 +32,7 @@ class CephDaemonSpec(object):
                  daemon_id: str,
                  daemon_type: str,
                  placement: list,
-                 spec: dict,
-                 dry_run: bool):
+                 spec: dict):
 
         self.daemon_name = daemon_name
         self.daemon_id = daemon_id
@@ -44,12 +42,12 @@ class CephDaemonSpec(object):
         assert isinstance(spec, dict)
         self.spec = spec
 
-        if dry_run is None:
-            self.apply = True
-        else:
-            self.dry_run = dry_run
-
     def host_list(self):
+        '''
+        we're assuming here a comma separated list
+        because those values are provided via cli
+        '''
+
         hl = []
         for e in self.placement.split(','):
             hl.append(e)
@@ -78,7 +76,9 @@ class CephDaemonSpec(object):
         return '%s.%s' % (self.daemon_type, self.daemon_id)
 
 
-def export(content):
+def export(content, preview):
+    if preview:
+        print(content)
     if len(content) > 0 and OPTS.output_file:
         fname = OPTS.output_file
         with open(fname, 'w') as f:
@@ -89,9 +89,13 @@ def export(content):
 
 def parse_opts(argv):
     parser = argparse.ArgumentParser(description='Parameters used to render the spec')
-    parser.add_argument('-d', '--daemon', metavar='DAEMON',
+    parser.add_argument('-d', '--daemon', metavar='SERVICE_TYPE',
                         help=("What kind of service we're going to apply"),
                         default='none', choices=['mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw'])
+    parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
+                        help=("The service_id of the daemon we're going to apply"))
+    parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
+                        help=("The service_name of the daemon we're going to apply"))
     parser.add_argument('-p', '--placement', metavar='PLACEMENT',
                         help="Host list where the service should be run",
                         default='*')
@@ -119,10 +123,17 @@ if __name__ == "__main__":
         print('Error, unable to render the spec for an Unknown Ceph daemon!')
         sys.exit(-1)
 
+    if OPTS.service_id is None:
+        OPTS.service_id = OPTS.daemon
+
+    if OPTS.service_name is None:
+        OPTS.service_name = OPTS.daemon
+
     if len(OPTS.spec) > 0:
         spec = json.loads(OPTS.spec.replace("'", "\""))
 
-    d = CephDaemonSpec(OPTS.daemon, OPTS.daemon, OPTS.daemon, OPTS.placement, spec, False)
-    export(d.make_daemon_spec())
+    d = CephDaemonSpec(OPTS.daemon, OPTS.service_id, OPTS.service_name, OPTS.placement, spec)
+    export(d.make_daemon_spec(), True)
 
+# e.g.
 # mkspec.py -d rgw -p host1,host2,host3 -s "{'zone' : 'default'}" -o rgw_out
