@@ -24,14 +24,36 @@ import sys
 #
 #
 
-ALLOWED_DAEMONS = ['mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
+ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
                    'prometheus', 'alertmanager', 'node-exporter']
 
+ALLOWED_HOST_PATTERN = ['list', 'regex']
+
+class CephHostSpec(object):
+    def __init__(self, daemon_type: str,
+                 daemon_addr: str,
+                 daemon_hostname: str,
+                 labels: list[str]):
+        self.daemon_type = daemon_type
+        self.daemon_addr = daemon_addr
+        self.daemon_hostname = daemon_hostname
+        assert isinstance(labels, list)
+        self.labels = labels
+
+    def make_daemon_spec(self):
+        spec_template = {
+            'service_type': self.daemon_type,
+            'addr': self.daemon_addr,
+            'hostname': self.daemon_hostname,
+            'labels': self.labels
+        }
+        return (yaml.dump(spec_template, indent=2))
+
 class CephDaemonSpec(object):
-    def __init__(self, daemon_name: str,
+    def __init__(self, daemon_type: str,
                  daemon_id: str,
-                 daemon_type: str,
-                 placement: list,
+                 daemon_name: str,
+                 placement: str,
                  spec: dict):
 
         self.daemon_name = daemon_name
@@ -42,7 +64,7 @@ class CephDaemonSpec(object):
         assert isinstance(spec, dict)
         self.spec = spec
 
-    def host_list(self):
+    def host_list(self) -> list:
         '''
         we're assuming here a comma separated list
         because those values are provided via cli
@@ -55,7 +77,12 @@ class CephDaemonSpec(object):
 
     def make_daemon_spec(self):
         spec_template = {
-            'placement': self.host_list(),
+            # improve how the placement can be defined
+            # 1. a dict where a pattern can be specified
+            # 2. the host list that can be passed
+            'placement': {
+                'hosts': self.host_list()
+            },
             'service_type': self.daemon_type,
             'service_name': self.daemon_name,
             'service_id': self.daemon_id
@@ -91,7 +118,9 @@ def parse_opts(argv):
     parser = argparse.ArgumentParser(description='Parameters used to render the spec')
     parser.add_argument('-d', '--daemon', metavar='SERVICE_TYPE',
                         help=("What kind of service we're going to apply"),
-                        default='none', choices=['mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw'])
+                        default='none', choices=['host', 'mon', 'mgr', 'mds', 'nfs', \
+                                                 'osd', 'rgw', 'grafana', 'prometheus', \
+                                                 'alertmanager'])
     parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
@@ -102,6 +131,13 @@ def parse_opts(argv):
     parser.add_argument('-s', '--spec', metavar='SPEC',
                         help=("Json/Dict definition of the spec section"),
                         default='{}')
+    parser.add_argument('-a', '--address', metavar='address',
+                        help=("The address of the host we're going to apply"))
+    parser.add_argument('-z', '--hostname', metavar='hostname',
+                        help=("The hostname of the host we're going to apply"))
+    parser.add_argument('-l', '--label', metavar='label',
+                        help=("The labels of the host we're going to apply"),
+                        default=[])
     parser.add_argument('-o', '--output-file', metavar='OUT_FILE',
                         help=("Path to the output file"
                               "(default: 'spec')"),
@@ -116,9 +152,6 @@ if __name__ == "__main__":
     OPTS = parse_opts(sys.argv)
     spec = {}
 
-    # debug
-    print(OPTS)
-
     if OPTS.daemon not in ALLOWED_DAEMONS:
         print('Error, unable to render the spec for an Unknown Ceph daemon!')
         sys.exit(-1)
@@ -132,8 +165,32 @@ if __name__ == "__main__":
     if len(OPTS.spec) > 0:
         spec = json.loads(OPTS.spec.replace("'", "\""))
 
-    d = CephDaemonSpec(OPTS.daemon, OPTS.service_id, OPTS.service_name, OPTS.placement, spec)
+    if OPTS.daemon == "host":
+        d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, ['mon', 'mgr'])
+    else:
+        d = CephDaemonSpec(OPTS.daemon, OPTS.service_id, OPTS.service_name, OPTS.placement, spec)
+
+    # Export the host I built in the specified output file
     export(d.make_daemon_spec(), True)
+
 
 # e.g.
 # mkspec.py -d rgw -p host1,host2,host3 -s "{'zone' : 'default'}" -o rgw_out
+#placement:
+#  hosts:
+#  - host1
+#  - host2
+#  - host3
+#service_id: rgw
+#service_name: rgw
+#service_type: rgw
+#spec:
+#  zone: default
+# ----
+# mkspec.py -d host -a standalone -z standalone
+#addr: standalone
+#hostname: standalone
+#labels:
+#- mon
+#- mgr
+#service_type: host
