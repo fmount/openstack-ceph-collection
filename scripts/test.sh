@@ -30,8 +30,20 @@ for key in "${!ceph_cluster[@]}"; do
     hostname=${ceph_cluster["$key"]}
     addr=${hostlist["${ceph_cluster["$key"]}"]}
     case "$host" in
-    *mon*) label="mon" ;;
-    *osd*) label="osd" ;;
+      *mon*) label="mon" ;;
+      *osd*) label="osd" ;;
     esac
     python mkspec.py -d 'host' -a $hostname -z $addr -l $label
 done
+
+# mons - Add the minimal amount of daemons
+python mkspec.py -d mon -p "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}"
+
+# osds - Add the minimal amount of daemons
+python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
+    -p ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
+    -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
+
+# crash - Add the crash daemon everywhere
+
+python mkspec.py -d crash -p '*'

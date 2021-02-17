@@ -26,7 +26,7 @@ import sys
 # 3. we should be alble (in main) to specify an array of CephHostSpec
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
-                   'prometheus', 'alertmanager', 'node-exporter']
+                   'crash', 'prometheus', 'alertmanager', 'node-exporter']
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
@@ -131,9 +131,12 @@ class CephDaemonSpec(object):
         pl = {}
         sp = {}
 
-        placement = CephPlacementSpec([], "", 0, self.labels)
+        if isinstance(self.placement, list):
+            place = CephPlacementSpec(self.placement, "", 0, self.labels)
+        else:
+            place = CephPlacementSpec([], self.placement, 0, self.labels)
 
-        pl = placement.make_spec()
+        pl = place.make_spec()
 
         spec_template = {
             'service_type': self.daemon_type,
@@ -173,7 +176,7 @@ def parse_opts(argv):
                         help=("What kind of service we're going to apply"),
                         default='none', choices=['host', 'mon', 'mgr', 'mds', 'nfs', \
                                                  'osd', 'rgw', 'grafana', 'prometheus', \
-                                                 'alertmanager'])
+                                                 'alertmanager', 'crash'])
     parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
@@ -236,13 +239,19 @@ if __name__ == "__main__":
     if len(OPTS.spec) > 0:
         spec = json.loads(OPTS.spec.replace("'", "\""))
 
+    if len(OPTS.placement) > 0:
+        if len(OPTS.placement.split(',')) > 0:
+            hosts = str_to_list(OPTS.placement)
+        else:
+            hosts = OPTS.placement  # this is a pattern
+
     if OPTS.daemon == "host":
         d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, labels)
     else:
         d = CephDaemonSpec(OPTS.daemon, \
                 OPTS.service_id, \
                 OPTS.service_name, \
-                OPTS.placement, \
+                hosts, \
                 spec, \
                 labels)
 
