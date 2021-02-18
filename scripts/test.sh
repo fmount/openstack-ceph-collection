@@ -25,7 +25,7 @@ ceph_cluster['osd3']='osd_hostname_3'
 
 
 # Building hosts
-test_host_list() {
+test_minimal() {
   for key in "${!ceph_cluster[@]}"; do
       host="$key"
       hostname=${ceph_cluster["$key"]}
@@ -46,17 +46,40 @@ test_host_list() {
       -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
 
   # crash - Add the crash daemon everywhere
-  python mkspec.py -d crash -p '*aaa*'
+  python mkspec.py -d crash -p '*'
 }
 
-test_host_pattern() {
+test_monitoring_stack() {
 
-  # mds - Add the mds daemon on controllers
-  python mkspec.py -d mds -p "*controller*" -o test_host_pattern
+  monitoring_stack=("grafana" "prometheus" "alertmanager")
 
   # node-exporter - Add this service everywhere in the cluster
-  python mkspec.py -d node-exporter -p "*" -o test_host_pattern
+  python mkspec.py -d node-exporter -p "*" -o monitoring_stack
+
+  for d in "${monitoring_stack[@]}"; {
+      python mkspec.py -d "$d" -l mon -o monitoring_stack
+  }
+}
+
+test_rgw() {
+    python mkspec.py -d rgw -i rgw.default -n rgw.default \
+        -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
+        -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default' }" \
+        -o rgw_spec
+}
+
+test_mds_nfs() {
+  # mds - Add the mds daemon on controllers
+  python mkspec.py -d mds -p "*controller*" -o ganesha
+
+  # nfs - Add the nfs daemon on controllers
+  python mkspec.py -d nfs -i standalone_nfs -n nfs.standalone_nfs -p "*controller*" \
+      -s "{'namespace': 'ganesha', 'pool': 'manila_data'}" \
+      -o ganesha
 
 }
 
-test_host_list
+test_minimal
+test_monitoring_stack
+test_rgw
+test_mds_nfs

@@ -176,7 +176,7 @@ def parse_opts(argv):
                         help=("What kind of service we're going to apply"),
                         default='none', choices=['host', 'mon', 'mgr', 'mds', 'nfs', \
                                                  'osd', 'rgw', 'grafana', 'prometheus', \
-                                                 'alertmanager', 'crash'])
+                                                 'alertmanager', 'crash', 'node-exporter'])
     parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
@@ -184,8 +184,7 @@ def parse_opts(argv):
     parser.add_argument('-g', '--host-group', metavar='HOST_GROUP',
                         help="Host list where the service should be run")
     parser.add_argument('-p', '--host-pattern', metavar='HOST_PATTERN',
-                        help="Host pattern to establish where the service should be applied",
-                        default='*')
+                        help="Host pattern to establish where the service should be applied")
     parser.add_argument('-s', '--spec', metavar='SPEC',
                         help=("Json/Dict definition of the spec section"),
                         default='{}')
@@ -211,6 +210,7 @@ if __name__ == "__main__":
     spec = {}
     labels = []
     hosts = []
+    pattern = None
 
     if OPTS.daemon not in ALLOWED_DAEMONS:
         print('Error, unable to render the spec for an Unknown Ceph daemon!')
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     if OPTS.host_group is not None and len(OPTS.host_group) > 0:
         hosts = [x for x in OPTS.host_group.split(',')]
 
-    if len(OPTS.host_pattern) > 0:
+    if OPTS.host_pattern is not None and len(OPTS.host_pattern) > 0:
         pattern = OPTS.host_pattern
 
     if OPTS.daemon == "host":
