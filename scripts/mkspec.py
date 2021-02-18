@@ -37,17 +37,15 @@ class CephPlacementSpec(object):
             count: int,
             labels: list):
 
-        #if len(labels) > 0:
-        #    self.labels = labels
-        #if count > 0:
-        #    self.count = count
-        #if host_pattern is not None and len(host_pattern) > 0:
-        #    self.host_pattern = host_pattern
+        if len(labels) > 0:
+            self.labels = labels
+        if count > 0:
+            self.count = count
+        if host_pattern is not None and len(host_pattern) > 0:
+            self.host_pattern = host_pattern
 
-        self.hosts = hosts
-        self.host_pattern = host_pattern
-        self.count = count
-        self.labels = labels
+        if hosts is not None and len(hosts) > 0:
+            self.hosts = hosts
 
     def __setattr__(self, key, value):
         self.__dict__[key] = value
@@ -55,7 +53,7 @@ class CephPlacementSpec(object):
     def make_spec(self):
         # if the host list is passed, this should be
         # the preferred way
-        if len(self.hosts) > 0:
+        if getattr(self, 'hosts', None):
             spec_template = {
                 'placement': {
                     'hosts': self.hosts
@@ -113,14 +111,16 @@ class CephDaemonSpec(object):
     def __init__(self, daemon_type: str,
                  daemon_id: str,
                  daemon_name: str,
-                 placement: str,
+                 hosts: list,
+                 placement_pattern: str,
                  spec: dict,
                  labels: list):
 
         self.daemon_name = daemon_name
         self.daemon_id = daemon_id
         self.daemon_type = daemon_type
-        self.placement = placement
+        self.hosts = hosts
+        self.placement = placement_pattern
         self.labels = labels
 
         assert isinstance(spec, dict)
@@ -128,22 +128,22 @@ class CephDaemonSpec(object):
 
     def make_daemon_spec(self):
 
+        # the placement dictionary
         pl = {}
+        # the spec dictionary
         sp = {}
 
-        if isinstance(self.placement, list):
-            place = CephPlacementSpec(self.placement, "", 0, self.labels)
-        else:
-            place = CephPlacementSpec([], self.placement, 0, self.labels)
-
+        place = CephPlacementSpec(self.hosts, self.placement, 0, self.labels)
         pl = place.make_spec()
 
+        # the spec daemon header
         spec_template = {
             'service_type': self.daemon_type,
             'service_name': self.daemon_name,
             'service_id': self.daemon_id,
         }
 
+        # append the spec if provided
         if len(self.spec.keys()) > 0:
             sp = {'spec': self.spec}
 
@@ -181,8 +181,10 @@ def parse_opts(argv):
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
                         help=("The service_name of the daemon we're going to apply"))
-    parser.add_argument('-p', '--placement', metavar='PLACEMENT',
-                        help="Host list where the service should be run",
+    parser.add_argument('-g', '--host-group', metavar='HOST_GROUP',
+                        help="Host list where the service should be run")
+    parser.add_argument('-p', '--host-pattern', metavar='HOST_PATTERN',
+                        help="Host pattern to establish where the service should be applied",
                         default='*')
     parser.add_argument('-s', '--spec', metavar='SPEC',
                         help=("Json/Dict definition of the spec section"),
@@ -201,19 +203,6 @@ def parse_opts(argv):
     opts = parser.parse_args(argv[1:])
 
     return opts
-
-# -- CLI utilities -- #
-
-def str_to_list(iterator) -> list:
-    '''
-    we're assuming here a comma separated list
-    because those values are provided via cli
-    '''
-
-    hl = []
-    for e in iterator.split(','):
-        hl.append(e)
-    return hl
 
 
 if __name__ == "__main__":
@@ -234,16 +223,16 @@ if __name__ == "__main__":
         OPTS.service_name = OPTS.daemon
 
     if len(OPTS.labels) > 0:
-        labels = str_to_list(OPTS.labels)
+        labels = [x for x in OPTS.labels.split(',')]
 
     if len(OPTS.spec) > 0:
         spec = json.loads(OPTS.spec.replace("'", "\""))
 
-    if len(OPTS.placement) > 0:
-        if len(OPTS.placement.split(',')) > 0:
-            hosts = str_to_list(OPTS.placement)
-        else:
-            hosts = OPTS.placement  # this is a pattern
+    if OPTS.host_group is not None and len(OPTS.host_group) > 0:
+        hosts = [x for x in OPTS.host_group.split(',')]
+
+    if len(OPTS.host_pattern) > 0:
+        pattern = OPTS.host_pattern
 
     if OPTS.daemon == "host":
         d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, labels)
@@ -252,6 +241,7 @@ if __name__ == "__main__":
                 OPTS.service_id, \
                 OPTS.service_name, \
                 hosts, \
+                pattern, \
                 spec, \
                 labels)
 
