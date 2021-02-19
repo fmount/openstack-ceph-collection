@@ -3,6 +3,7 @@
 # HOST DECLARATION
 
 declare -A hostlist
+TARGET_OUT="spec_out"
 
 # controllers
 hostlist['controller_hostname_1']='172.16.24.10'
@@ -37,28 +38,33 @@ test_add_minimal() {
     python mkspec.py -d 'host' -a $hostname -z $addr -l $label >> "$1"
   done
 
-  # mons - Add the minimal amount of daemons
-  python mkspec.py -d mon -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}" >> "$1"
+  {
+    # mons - Add the minimal amount of daemons
+    python mkspec.py -d mon -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}"
 
-  # osds - Add the minimal amount of daemons
-  python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
-    -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-    -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" >> "$1"
+    # osds - Add the minimal amount of daemons
+    python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
+      -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
+      -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
 
-  # crash - Add the crash daemon everywhere
-  python mkspec.py -d crash -p '*' >> "$1"
+    # crash - Add the crash daemon everywhere
+    python mkspec.py -d crash -p '*'
+  } >> "$1"
 }
 
 test_add_monitoring_stack() {
 
   monitoring_stack=("grafana" "prometheus" "alertmanager")
 
-  # node-exporter - Add this service everywhere in the cluster
-  python mkspec.py -d node-exporter -p "*" -o monitoring_stack >> "$1"
+    {
+    # node-exporter - Add this service everywhere in the cluster
+    python mkspec.py -d node-exporter -p "*"
 
-  for d in "${monitoring_stack[@]}"; {
-    python mkspec.py -d "$d" -l mon -o monitoring_stack >> "$1"
-  }
+    for d in "${monitoring_stack[@]}"; {
+      python mkspec.py -d "$d" -l mon
+
+    }
+  } >> "$1"
 }
 
 test_add_rgw() {
@@ -71,12 +77,12 @@ test_add_rgw() {
 test_add_mds_nfs() {
   # mds - Add the mds daemon on controllers
 
-  python mkspec.py -d mds -p "*controller*" >> "$1"
-
-  # nfs - Add the nfs daemon on controllers
-  python mkspec.py -d nfs -i standalone_nfs -n nfs.standalone_nfs -p "*controller*" \
-    -s "{'namespace': 'ganesha', 'pool': 'manila_data'}" \
-    >> "$1"
+  {
+      python mkspec.py -d mds -p "*controller*";
+      # nfs - Add the nfs daemon on controllers
+      python mkspec.py -d nfs -i standalone_nfs -n nfs.standalone_nfs -p "*controller*" \
+      -s "{'namespace': 'ganesha', 'pool': 'manila_data'}"
+  } >> "$1"
 }
 
 test_add_hosts() {
@@ -85,32 +91,39 @@ test_add_hosts() {
       *controller*) label="mon,controller" ;;
       *osd*) label="osd,ceph_storage" ;;
     esac
-    if [ -n "$1" ]; then
-      python mkspec.py -d host -a "$key" -z "${hostlist[$key]}" -l "$label" >> "$1"
-    else
-      python mkspec.py -d host -a "$key" -z "${hostlist[$key]}" -l "$label"
-    fi
+    python mkspec.py -d host -a "$key" -z "${hostlist[$key]}" -l "$label" >> "$1"
   }
 }
 
 test_build_spec_before_bootstrap() {
-  output=default_ceph_spec
-  for feature in "hosts" "minimal" "rgw" "mds_nfs"; do
+  for feature in "minimal" "rgw" "mds_nfs"; do
     printf " * Adding  %s\n" "$feature"
-    test_add_$feature $output
+    test_add_$feature "$1"
   done
 
 }
 
-echo "Building host_list"
-test_add_hosts "host_list"
-echo "Building minimal cluster spec"
-test_add_minimal "minimal_cluster_spec"
-echo "Building monitoring_stack"
-test_add_monitoring_stack "monitoring_stack"
-echo "Building RGW spec"
-test_add_rgw "rgw_spec"
-echo "Building Ganesha spec"
-test_add_mds_nfs "ganesha"
-echo "Building Ganesha spec"
-test_build_spec_before_bootstrap
+cleanup() {
+    printf "Cleaning up %s\n" "$TARGET_OUT"
+    rm -f "$TARGET_OUT"/*
+}
+
+main() {
+  cleanup
+  mkdir -p "$TARGET_OUT"
+
+  echo "Building host_list"
+  test_add_hosts "$TARGET_OUT/host_list"
+  echo "Building minimal cluster spec"
+  test_add_minimal "$TARGET_OUT/minimal_cluster_spec"
+  echo "Building monitoring_stack"
+  test_add_monitoring_stack "$TARGET_OUT/monitoring_stack"
+  echo "Building RGW spec"
+  test_add_rgw "$TARGET_OUT/rgw_spec"
+  echo "Building Ganesha spec"
+  test_add_mds_nfs "$TARGET_OUT/ganesha"
+  echo "Building Full Ceph Cluster spec"
+  test_build_spec_before_bootstrap "$TARGET_OUT/full_cluster"
+}
+
+main
