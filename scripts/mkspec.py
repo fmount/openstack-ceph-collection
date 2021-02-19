@@ -35,7 +35,7 @@ class CephPlacementSpec(object):
             hosts: list,
             host_pattern: str,
             count: int,
-            labels: list):
+            labels: list[str]):
 
         if len(labels) > 0:
             self.labels = labels
@@ -114,7 +114,7 @@ class CephDaemonSpec(object):
                  hosts: list,
                  placement_pattern: str,
                  spec: dict,
-                 labels: list):
+                 labels: list[str]):
 
         self.daemon_name = daemon_name
         self.daemon_id = daemon_id
@@ -158,14 +158,18 @@ class CephDaemonSpec(object):
         return '%s.%s' % (self.daemon_type, self.daemon_id)
 
 
-def export(content, preview):
-    if preview:
-        print(content)
-    if len(content) > 0 and OPTS.output_file:
-        fname = OPTS.output_file
-        with open(fname, 'a') as f:
-            f.write('---\n')
-            f.write(content)
+def export(content):
+    if len(content) > 0:
+        if OPTS.output_file is not None and len(OPTS.output_file) > 0:
+            fname = OPTS.output_file
+            with open(fname, 'a') as f:
+                f.write('---\n')
+                f.write(content)
+        else:
+            print('---')
+            print(content.rstrip('\r\n'))
+    else:
+        print('Nothing to dump!')
 
 
 # -- MAIN --
@@ -196,9 +200,7 @@ def parse_opts(argv):
                         help=("The labels of the host we're going to apply"),
                         default=[])
     parser.add_argument('-o', '--output-file', metavar='OUT_FILE',
-                        help=("Path to the output file"
-                              "(default: 'spec')"),
-                        default='spec_out')
+                        help=("Path to the output file"))
     opts = parser.parse_args(argv[1:])
 
     return opts
@@ -246,7 +248,7 @@ if __name__ == "__main__":
                 labels)
 
     # Export the host I built in the specified output file
-    export(d.make_daemon_spec(), True)
+    export(d.make_daemon_spec())
 
 
 # ------------ EXAMPLE OF CREATING A NEW HOST ---------------- #
