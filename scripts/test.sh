@@ -42,6 +42,9 @@ test_add_minimal() {
     # mons - Add the minimal amount of daemons
     python mkspec.py -d mon -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}"
 
+    # mgrs - Add the minimal amount of daemons
+    python mkspec.py -d mgr -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}"
+
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
@@ -52,7 +55,7 @@ test_add_minimal() {
   } >> "$1"
 }
 
-test_add_monitoring_stack() {
+test_add_monitoring() {
 
   monitoring_stack=("grafana" "prometheus" "alertmanager")
 
@@ -74,7 +77,7 @@ test_add_rgw() {
     >> "$1"
 }
 
-test_add_mds_nfs() {
+test_add_ganesha() {
   # mds - Add the mds daemon on controllers
 
   {
@@ -95,8 +98,8 @@ test_add_hosts() {
   }
 }
 
-test_build_spec_before_bootstrap() {
-  for feature in "minimal" "rgw" "mds_nfs"; do
+test_add_full() {
+  for feature in "minimal" "rgw" "ganesha"; do
     printf " * Adding  %s\n" "$feature"
     test_add_$feature "$1"
   done
@@ -108,22 +111,96 @@ cleanup() {
     rm -f "$TARGET_OUT"/*
 }
 
-main() {
-  cleanup
-  mkdir -p "$TARGET_OUT"
-
-  echo "Building host_list"
-  test_add_hosts "$TARGET_OUT/host_list"
-  echo "Building minimal cluster spec"
-  test_add_minimal "$TARGET_OUT/minimal_cluster_spec"
-  echo "Building monitoring_stack"
-  test_add_monitoring_stack "$TARGET_OUT/monitoring_stack"
-  echo "Building RGW spec"
-  test_add_rgw "$TARGET_OUT/rgw_spec"
-  echo "Building Ganesha spec"
-  test_add_mds_nfs "$TARGET_OUT/ganesha"
-  echo "Building Full Ceph Cluster spec"
-  test_build_spec_before_bootstrap "$TARGET_OUT/full_cluster"
+usage() {
+  # Display Help
+  echo "This script is the helper to build several Ceph spec(s)."
+  echo
+  echo "Syntax: $0 [-a][-c][-u <use_case>]" 1>&2;
+  echo "options:"
+  echo "a     Execute all the existing use cases."
+  echo "c     Clean the target dir where the spec files are rendered."
+  echo "u     use the -u <use case> to render a specific daemon spec."
+  echo
+  echo "Available use cases are: hosts, minimal, rgw, monitoring, ganesha, full";
+  echo
+  echo "Examples"
+  echo
+  echo "./test.sh -a  # build all the use cases in $TARGET_DIR"
+  echo "./test.sh -u rgw  # render the rgw use case in $TARGET_DIR"
+  echo "./test.sh -u full  # render the full ceph cluster use case in $TARGET_DIR"
+  exit 1
 }
 
-main
+test_suite() {
+  case "$1" in
+    "all")
+        for use_case in "hosts" "minimal" "monitoring" "rgw" \
+            "ganesha" "full"; do
+            echo "Building $use_case spec";
+            test_add_$use_case "$TARGET_OUT/$use_case"
+        done
+        ;;
+    "hosts")
+        echo "Building host_list"
+        test_add_hosts "$TARGET_OUT/host_list"
+        ;;
+    "minimal")
+        echo "Building minimal cluster spec"
+        test_add_minimal "$TARGET_OUT/minimal_cluster_spec"
+        ;;
+    "ganesha")
+        echo "Building Ganesha spec"
+        test_add_ganesha "$TARGET_OUT/ganesha"
+        ;;
+    "monitoring")
+        echo "Building monitoring_stack"
+        test_add_monitoring_stack "$TARGET_OUT/monitoring_stack"
+        ;;
+    "rgw")
+        echo "Building RGW spec"
+        test_add_rgw "$TARGET_OUT/rgw_spec"
+        ;;
+    "full")
+        echo "Building Full Ceph Cluster spec"
+        test_build_spec_before_bootstrap "$TARGET_OUT/full_cluster"
+        ;;
+  esac
+}
+
+if [[ ${#} -eq 0 ]]; then
+  usage
+fi
+
+# processing options
+while getopts "u:ach" o; do
+    case "${o}" in
+      a)
+        u="all"
+        ;;
+      c)
+        cleanup
+        exit 0
+        ;;
+      u)
+        u=${OPTARG}
+        ;;
+      h)
+        usage
+        ;;
+      *)
+        usage
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ -z "${u}" ]; then
+    usage
+fi
+
+# prereq - cleanup previous executions and build output dir
+cleanup
+mkdir -p "$TARGET_OUT"
+
+test_suite "${u}"
