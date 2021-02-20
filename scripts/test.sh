@@ -116,7 +116,7 @@ usage() {
   echo "This script is the helper to build several Ceph spec(s)."
   echo
   echo "Syntax: $0 [-a][-c][-u <use_case>]" 1>&2;
-  echo "options:"
+  echo "Options:"
   echo "a     Execute all the existing use cases."
   echo "c     Clean the target dir where the spec files are rendered."
   echo "u     use the -u <use case> to render a specific daemon spec."
@@ -125,9 +125,10 @@ usage() {
   echo
   echo "Examples"
   echo
-  echo "./test.sh -a  # build all the use cases in $TARGET_DIR"
-  echo "./test.sh -u rgw  # render the rgw use case in $TARGET_DIR"
-  echo "./test.sh -u full  # render the full ceph cluster use case in $TARGET_DIR"
+  echo "./test.sh -a  # build all the use cases in \$TARGET_DIR"
+  echo "./test.sh -c  # Clean \$TARGET_DIR"
+  echo "./test.sh -u rgw  # render the rgw use case in \$TARGET_DIR"
+  echo "./test.sh -u full  # render the full ceph cluster use case in \$TARGET_DIR"
   exit 1
 }
 
@@ -203,4 +204,6 @@ fi
 cleanup
 mkdir -p "$TARGET_OUT"
 
+# always use the last option provided since this is a "one shot"
+# script
 test_suite "${u}"
