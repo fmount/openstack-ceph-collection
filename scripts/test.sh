@@ -73,8 +73,9 @@ test_add_monitoring() {
 test_add_rgw() {
   python mkspec.py -d rgw -i rgw.default -n rgw.default \
     -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
-    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default' }" \
-    >> "$1"
+    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+    -o "$TARGET_OUT"/rgw
+    # >> "$1"
 }
 
 test_add_ganesha() {
