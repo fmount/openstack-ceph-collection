@@ -100,7 +100,7 @@ test_add_hosts() {
 }
 
 test_add_full() {
-  for feature in "minimal" "rgw" "ganesha"; do
+  for feature in "minimal" "rgw" "ganesha" "monitoring"; do
     printf " * Adding  %s\n" "$feature"
     test_add_$feature "$1"
   done
@@ -159,7 +159,7 @@ test_suite() {
         ;;
     "monitoring")
         echo "Building monitoring_stack"
-        test_add_monitoring_stack "$TARGET_OUT/monitoring_stack"
+        test_add_monitoring "$TARGET_OUT/monitoring_stack"
         echo "Monitoring Stack spec exported in $TARGET_OUT"
         ;;
     "rgw")
@@ -169,7 +169,7 @@ test_suite() {
         ;;
     "full")
         echo "Building Full Ceph Cluster spec"
-        test_build_spec_before_bootstrap "$TARGET_OUT/full_cluster"
+        test_add_full "$TARGET_OUT/full_cluster"
         echo "Full cluster spec exported in $TARGET_OUT"
         ;;
   esac
