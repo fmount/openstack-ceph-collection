@@ -55,6 +55,21 @@ test_add_minimal() {
   } >> "$1"
 }
 
+test_add_mon() {
+    # mons - Add the minimal amount of daemons
+    python mkspec.py -d mon -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}" \
+        -o "$TARGET_OUT"/mon
+
+}
+
+test_add_osd() {
+    # osds - Add the minimal amount of daemons
+    python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
+      -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
+      -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
+      -o "$TARGET_OUT"/osds
+}
+
 test_add_monitoring() {
 
   monitoring_stack=("grafana" "prometheus" "alertmanager")
@@ -122,13 +137,14 @@ usage() {
   echo "c     Clean the target dir where the spec files are rendered."
   echo "u     use the -u <use case> to render a specific daemon spec."
   echo
-  echo "Available use cases are: hosts, minimal, rgw, monitoring, ganesha, full";
+  echo "Available use cases are: hosts, minimal, mon, osd, rgw, monitoring, ganesha, full";
   echo
   echo "Examples"
   echo
   echo "./test.sh -a  # build all the use cases in \$TARGET_DIR"
   echo "./test.sh -c  # Clean \$TARGET_DIR"
   echo "./test.sh -u rgw  # render the rgw use case in \$TARGET_DIR"
+  echo "./test.sh -u osd  # render the osd use case in \$TARGET_DIR"
   echo "./test.sh -u full  # render the full ceph cluster use case in \$TARGET_DIR"
   exit 1
 }
@@ -142,6 +158,16 @@ test_suite() {
             test_add_$use_case "$TARGET_OUT/$use_case"
         done
         ;;
+    "full")
+        echo "Building Full Ceph Cluster spec"
+        test_add_full "$TARGET_OUT/full_cluster"
+        echo "Full cluster spec exported in $TARGET_OUT"
+        ;;
+    "ganesha")
+        echo "Building Ganesha spec"
+        test_add_ganesha "$TARGET_OUT/ganesha"
+        echo "Ganesha spec exported in $TARGET_OUT"
+        ;;
     "hosts")
         echo "Building host_list"
         test_add_hosts "$TARGET_OUT/host_list"
@@ -152,25 +178,25 @@ test_suite() {
         test_add_minimal "$TARGET_OUT/minimal_cluster_spec"
         echo "Minimal spec exported in $TARGET_OUT"
         ;;
-    "ganesha")
-        echo "Building Ganesha spec"
-        test_add_ganesha "$TARGET_OUT/ganesha"
-        echo "Ganesha spec exported in $TARGET_OUT"
+    "mon")
+        echo "Building mon(s) spec"
+        test_add_mon "$TARGET_OUT/mon"
+        echo "mon(s) spec exported in $TARGET_OUT"
         ;;
     "monitoring")
         echo "Building monitoring_stack"
         test_add_monitoring "$TARGET_OUT/monitoring_stack"
         echo "Monitoring Stack spec exported in $TARGET_OUT"
         ;;
+    "osd")
+        echo "Building osd(s) spec"
+        test_add_osd "$TARGET_OUT/osds"
+        echo "OSD(s) spec exported in $TARGET_OUT"
+        ;;
     "rgw")
         echo "Building RGW spec"
         test_add_rgw "$TARGET_OUT/rgw_spec"
         echo "RGW spec exported in $TARGET_OUT"
-        ;;
-    "full")
-        echo "Building Full Ceph Cluster spec"
-        test_add_full "$TARGET_OUT/full_cluster"
-        echo "Full cluster spec exported in $TARGET_OUT"
         ;;
   esac
 }

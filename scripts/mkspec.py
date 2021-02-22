@@ -21,6 +21,7 @@ import json
 import sys
 
 # NOTES/TODO(s):
+# 1. should we have a multilevel spec_keys validation
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
                    'crash', 'prometheus', 'alertmanager', 'node-exporter']
@@ -37,7 +38,12 @@ ALLOWED_SPEC_KEYS = {
     'nfs': [
         'namespace',
         'pool'
-    ]
+    ],
+    'osd': [
+        'data_devices',
+        'db_devices',
+        'wal_devices',
+    ],
 }
 
 class CephPlacementSpec(object):
