@@ -145,26 +145,32 @@ test_suite() {
     "hosts")
         echo "Building host_list"
         test_add_hosts "$TARGET_OUT/host_list"
+        echo "Host list exported in $TARGET_OUT"
         ;;
     "minimal")
         echo "Building minimal cluster spec"
         test_add_minimal "$TARGET_OUT/minimal_cluster_spec"
+        echo "Minimal spec exported in $TARGET_OUT"
         ;;
     "ganesha")
         echo "Building Ganesha spec"
         test_add_ganesha "$TARGET_OUT/ganesha"
+        echo "Ganesha spec exported in $TARGET_OUT"
         ;;
     "monitoring")
         echo "Building monitoring_stack"
         test_add_monitoring_stack "$TARGET_OUT/monitoring_stack"
+        echo "Monitoring Stack spec exported in $TARGET_OUT"
         ;;
     "rgw")
         echo "Building RGW spec"
         test_add_rgw "$TARGET_OUT/rgw_spec"
+        echo "RGW spec exported in $TARGET_OUT"
         ;;
     "full")
         echo "Building Full Ceph Cluster spec"
         test_build_spec_before_bootstrap "$TARGET_OUT/full_cluster"
+        echo "Full cluster spec exported in $TARGET_OUT"
         ;;
   esac
 }
