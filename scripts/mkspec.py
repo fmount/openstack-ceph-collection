@@ -27,7 +27,18 @@ ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', 
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
-ALLOWED_SPEC_KEYS = {'rgw': ['rgw_frontend_port', 'rgw_realm', 'rgw_zone', 'rgw_ip_address']}
+ALLOWED_SPEC_KEYS = {
+    'rgw': [
+        'rgw_frontend_port',
+        'rgw_realm',
+        'rgw_zone',
+        'rgw_ip_address'
+    ],
+    'nfs': [
+        'namespace',
+        'pool'
+    ]
+}
 
 class CephPlacementSpec(object):
     def __init__(self,
@@ -143,12 +154,12 @@ class CephDaemonSpec(object):
         }
 
         # append the spec if provided
-        if len(self.spec.keys()) > 0 and \
-                self.validate_spec_dict(self.spec.keys(), ALLOWED_SPEC_KEYS):
-            sp = {'spec': self.spec}
-        else:
-            raise Exception("Fatal: the spec should be composed by only allowed \
-                    keywords")
+        if len(self.spec.keys()) > 0:
+            if(self.validate_spec_dict(self.spec.keys(), ALLOWED_SPEC_KEYS)):
+                sp = {'spec': self.spec}
+            else:
+                raise Exception("Fatal: the spec should be composed by only allowed keywords")
+
         # build the resulting daemon template
         spec_template = {**spec_template, **pl, **sp}
         return (yaml.dump(spec_template, indent=2))
