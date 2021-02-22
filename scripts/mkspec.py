@@ -21,8 +21,6 @@ import json
 import sys
 
 # NOTES/TODO(s):
-# 1. validate spec fields according to the daemon type: this should be helpful
-#    and avoid getting invalid keywords
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
                    'crash', 'prometheus', 'alertmanager', 'node-exporter']
@@ -148,7 +146,9 @@ class CephDaemonSpec(object):
         if len(self.spec.keys()) > 0 and \
                 self.validate_spec_dict(self.spec.keys(), ALLOWED_SPEC_KEYS):
             sp = {'spec': self.spec}
-
+        else:
+            raise Exception("Fatal: the spec should be composed by only allowed \
+                    keywords")
         # build the resulting daemon template
         spec_template = {**spec_template, **pl, **sp}
         return (yaml.dump(spec_template, indent=2))
