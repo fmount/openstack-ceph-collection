@@ -1,7 +1,7 @@
-# TripleO Ceph roles and script Collection (Victoria Cycle)
+# TripleO Ceph roles and script Collection (Wallaby Cycle)
 
 The purpose of this repo is to collect scripts, notes, playbooks
-for the next OpenStack cycle (V).
+for the next OpenStack cycle (W).
 
 
 ## Deploy a TripleO lab
