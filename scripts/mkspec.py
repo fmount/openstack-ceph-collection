@@ -23,7 +23,7 @@ import sys
 # NOTES/TODO(s):
 # 1. should we have a multilevel spec_keys validation
 
-ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana', \
+ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
                    'crash', 'prometheus', 'alertmanager', 'node-exporter']
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
@@ -48,10 +48,10 @@ ALLOWED_SPEC_KEYS = {
 
 class CephPlacementSpec(object):
     def __init__(self,
-            hosts: list,
-            host_pattern: str,
-            count: int,
-            labels: list[str]):
+                 hosts: list,
+                 host_pattern: str,
+                 count: int,
+                 labels: list[str]):
 
         if len(labels) > 0:
             self.labels = labels
