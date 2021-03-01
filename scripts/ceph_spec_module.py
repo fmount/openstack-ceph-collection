@@ -88,16 +88,17 @@ options:
           - The spec definition of the daemon
         type: dict
         required: false
-    state:
+    render_path:
         description:
-          - If 'present' is used, the module creates the daemon if it
-            doesn't  exist or update it (redeploy) if it already exists.
-            If 'absent' is used, the module will simply delete the daemon
-            via the orchestrator.
-        required: false
-        choices: ['present', 'absent']
+          - Where the spec will be rendered
         type: str
-        default: present
+        required: false
+    apply:
+        description:
+          - If truem the spec rendered will be applied by the orchestrator
+        type: bool
+        required: false
+        default: false
 """
 
 EXAMPLES = '''
@@ -106,11 +107,12 @@ EXAMPLES = '''
     service_type: mds
     service_id: mds
     service_name: mds
+    render_path: '/home/ceph-admin/specs'
     hosts:
       - host1
       - host2
       - hostN
-    state: present
+    apply: true
 
 - name: create the Ceph MDS daemon spec
   ceph_spec:
@@ -118,16 +120,17 @@ EXAMPLES = '''
     service_id: mds
     service_name: mds
     host_pattern: "*mon*"
-    state: present
+    apply: false
 
 - name: create the Ceph MDS daemon spec
   ceph_spec:
     service_type: mds
     service_id: mds
     service_name: mds
+    render_path: '/home/ceph-admin/specs'
     labels:
       - "controller"
-    state: present
+    apply: true
 '''
 
 RETURN = '''#  '''
@@ -135,17 +138,28 @@ RETURN = '''#  '''
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
                    'crash', 'prometheus', 'alertmanager', 'node-exporter']
 
-def apply():
-    pass
+def generate_orch_cli(cluster, spec_path, container_image):
 
-def render():
-    pass
+    args = ['apply', '--in-file', spec_path]
+
+    cmd = generate_ceph_cmd(sub_cmd=['orch'], args=args, spec_path=spec_path, cluster=cluster, container_image=container_image)
+    return cmd
+
+def render(path, content):
+    if len(content) > 0:
+        if path is not None and len(path) > 0:
+            with open(path, 'w') as f:
+                f.write('---\n')
+                f.write(yaml.dump(content, indent=2))
+    else:
+        print('Nothing to dump!')
 
 def run_module():
 
     module = AnsibleModule(
         argument_spec=yaml.safe_load(DOCUMENTATION)['options'],
         supports_check_mode=True,
+        required_if=[['apply', True, ['render_path']]],
     )
 
     # Gather module parameters in variables
@@ -157,7 +171,8 @@ def run_module():
     host_pattern = module.params.get('host_pattern')
     labels = module.params.get('labels')
     spec = module.params.get('spec')
-    state = module.params.get('state')
+    apply = module.params.get('apply')
+    render_path = module.params.get('render_path')
 
     if module.check_mode:
         module.exit_json(
@@ -169,6 +184,9 @@ def run_module():
             end='',
             delta='',
         )
+
+    startd = datetime.datetime.now()
+    changed = False
 
     # PROCESSING PARAMETERS
     if service_id is None:
@@ -190,17 +208,15 @@ def run_module():
             spec,
             labels)
 
-    # NOTE (to /me):
-    # The library should be modified; in particular, the only allowed return
-    # values must be dict for two reasons:
-    #
-    # 1. we want to register the result and apply it later if 'apply' is FALSE
-    #
-    # 2. less dependencies on the library that shouldn't take care about data
-    #    structure conversions: we already imported here yaml and there's no
-    #    need to delegate the conversion to the translation layer which speaks
-    #    only 'dict' language
-    module.exit_json(changed=True, result=d.make_daemon_spec())
+    if apply:
+        container_image = is_containerized()
+        render('{}/{}'.format(render_path, service_type), d.make_daemon_spec())
+        cmd = generate_orch_cli(cluster, '{}/{}'.format(render_path, service_type), container_image)
+        rc, cmd, out, err = exec_command(module, cmd)
+        # module.exit_json(changed=True, result=cmd)
+        exit_module(module=module, out=out, rc=rc, cmd=cmd, err=err, startd=startd, changed=changed)
+    else:
+        module.exit_json(changed=True, result=d.make_daemon_spec())
 
 def main():
     run_module()
