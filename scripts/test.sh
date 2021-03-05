@@ -55,7 +55,7 @@ test_add_minimal() {
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-      -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
+      -e "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
 
     # crash - Add the crash daemon everywhere
     python mkspec.py -d crash -p '*'
@@ -77,7 +77,7 @@ test_add_osd() {
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-      -s "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
+      -e "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
       -o "$TARGET_OUT"/osds
 }
 
@@ -85,7 +85,7 @@ test_add_osd_fail() {
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-      -s "{'data':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
+      -e "{'data':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
       -o "$TARGET_OUT"/osds
 }
 

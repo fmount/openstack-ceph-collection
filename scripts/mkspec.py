@@ -28,6 +28,14 @@ ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
+ALLOWED_EXTRA_KEYS = {
+    'osd': [
+        'data_devices',
+        'db_devices',
+        'wal_devices',
+    ]
+}
+
 ALLOWED_SPEC_KEYS = {
     'rgw': [
         'rgw_frontend_port',
@@ -130,7 +138,8 @@ class CephDaemonSpec(object):
                  hosts: list,
                  placement_pattern: str,
                  spec: dict,
-                 labels: list[str]):
+                 labels: list[str],
+                 **kwargs: dict):
 
         self.daemon_name = daemon_name
         self.daemon_id = daemon_id
@@ -139,8 +148,16 @@ class CephDaemonSpec(object):
         self.placement = placement_pattern
         self.labels = labels
 
+        # extra keywords definition (e.g. data_devices for OSD(s)
+        self.extra = {}
+        for k, v in kwargs.items():
+            self.extra[k] = v
+
         assert isinstance(spec, dict)
         self.spec = spec
+
+    def __setattr__(self, key, value):
+        self.__dict__[key] = value
 
     def make_daemon_spec(self):
 
@@ -159,18 +176,22 @@ class CephDaemonSpec(object):
             'service_id': self.daemon_id,
         }
 
+        # process extra parameters if present
+        if not self.validate_keys(self.extra.keys(), ALLOWED_EXTRA_KEYS):
+            raise Exception("Fatal: the spec should be composed by only allowed keywords")
+
         # append the spec if provided
         if len(self.spec.keys()) > 0:
-            if(self.validate_spec_dict(self.spec.keys(), ALLOWED_SPEC_KEYS)):
+            if(self.validate_keys(self.spec.keys(), ALLOWED_SPEC_KEYS)):
                 sp = {'spec': self.spec}
             else:
                 raise Exception("Fatal: the spec should be composed by only allowed keywords")
 
         # build the resulting daemon template
-        spec_template = {**spec_template, **pl, **sp}
+        spec_template = {**spec_template, **self.extra, **pl, **sp}
         return (yaml.dump(spec_template, indent=2))
 
-    def validate_spec_dict(self, spec, ALLOWED_KEYS):
+    def validate_keys(self, spec, ALLOWED_KEYS):
         '''
         When the spec section is created, if constraints are
         defined for a given daemon, then this check is run
@@ -232,6 +253,9 @@ def parse_opts(argv):
     parser.add_argument('-s', '--spec', metavar='SPEC',
                         help=("Json/Dict definition of the spec section"),
                         default='{}')
+    parser.add_argument('-e', '--extra', metavar='extra',
+                        help=("Json/Dict definition of extra keys"),
+                        default='{}')
     parser.add_argument('-a', '--address', metavar='address',
                         help=("The address of the host we're going to apply"))
     parser.add_argument('-z', '--hostname', metavar='hostname',
@@ -276,6 +300,9 @@ if __name__ == "__main__":
     if OPTS.host_pattern is not None and len(OPTS.host_pattern) > 0:
         pattern = OPTS.host_pattern
 
+    if OPTS.extra is not None and len(OPTS.extra) > 0:
+        extra = json.loads(OPTS.extra.replace("'", "\""))
+
     if OPTS.daemon == "host":
         d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, labels)
     else:
@@ -285,7 +312,8 @@ if __name__ == "__main__":
                 hosts, \
                 pattern, \
                 spec, \
-                labels)
+                labels, \
+                **extra)
 
     # Export the host I built in the specified output file
     export(d.make_daemon_spec())
