@@ -19,6 +19,7 @@ import argparse
 import yaml
 import json
 import sys
+import re
 
 # NOTES/TODO(s):
 # 1. should we have a multilevel spec_keys validation
@@ -46,12 +47,7 @@ ALLOWED_SPEC_KEYS = {
     'nfs': [
         'namespace',
         'pool'
-    ],
-    'osd': [
-        'data_devices',
-        'db_devices',
-        'wal_devices',
-    ],
+    ]
 }
 
 class CephPlacementSpec(object):
@@ -74,10 +70,43 @@ class CephPlacementSpec(object):
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
+
+    def validate_host_list(self, entry):
+        # Matches from start to : or = or until end of string
+        host_re = r'^(.*?)(:|=|$)'
+        # Matches from : to = or until end of string
+        ip_re = r':(.*?)(=|$)'
+        # Matches from = to end of string
+        name_re = r'=(.*?)$'
+
+        is_valid = False
+
+        match_host = re.search(host_re, entry)
+        if match_host:
+            #print("\nHOST: %s" % match_host.group(1))
+            is_valid = True
+
+        name_match = re.search(name_re, entry)
+        if name_match:
+            #print("NAME: %s" % name_match.group(1))
+            is_valid = True
+
+        ip_match = re.search(ip_re, entry)
+        if ip_match:
+            #print("IP: %s" % ip_match.group(1))
+            is_valid = True
+
+        #print("-------------")
+        return is_valid
+
     def make_spec(self):
         # if the host list is passed, this should be
         # the preferred way
         if getattr(self, 'hosts', None):
+
+            if False in list(map(self.validate_host_list, self.hosts)):
+                raise Exception("Fatal: Invalid host definition detected")
+
             spec_template = {
                 'placement': {
                     'hosts': self.hosts
