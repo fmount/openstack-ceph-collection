@@ -109,11 +109,40 @@ test_add_monitoring_fail() {
 }
 
 test_add_rgw() {
+
+  # network can be defined in the form of: "myhost:1.2.3.0/24=name"
+  #
+  # placement:
+  #   - host1:1.2.3.0/24
+  #   - host2:4.5.6.0/24
+  #   - host3:7.8.9.0/24
+
+  # CASE 1: host1,host2,host3
   python mkspec.py -d rgw -i rgw.default -n rgw.default \
     -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
     -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
     -o "$TARGET_OUT"/rgw
+
+  [ "$preview" -gt 0 ] && printf "\nCASE1: host1,host2,host3\n" && cat "$TARGET_OUT/rgw"
+  reset_out "$TARGET_OUT/rgw"
+
+  # CASE 2: host1:subnet/mask,host2:subnet/mask,host3:subnet/mask
+  python mkspec.py -d rgw -i rgw.default -n rgw.default \
+    -g ${ceph_cluster['mon1']}:1.2.3.0/24,${ceph_cluster['mon2']}:4.5.6.0/24,${ceph_cluster['mon3']}:7.8.9.0/24 \
+    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+    -o "$TARGET_OUT"/rgw
+
+  [ "$preview" -gt 0 ] && printf "\nCASE2: host1:subnet/mask,host2:subnet/mask,host3:subnet/mask\n" && cat "$TARGET_OUT/rgw"
+  reset_out "$TARGET_OUT/rgw"
+
+  # CASE 3: host1:subnet/mask=name,host2:subnet/mask=name,host3:subnet/mask=name
+  python mkspec.py -d rgw -i rgw.default -n rgw.default \
+    -g ${ceph_cluster['mon1']}:1.2.3.0/24=rgw1,${ceph_cluster['mon2']}:4.5.6.0/24=rgw2,${ceph_cluster['mon3']}:7.8.9.0/24=rgw3 \
+    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+    -o "$TARGET_OUT"/rgw
     # >> "$1"
+
+  [ "$preview" -gt 0 ] && printf "\nCASE3: host1:subnet/mask=name,host2:subnet/mask=name,host3:subnet/mask=name" && cat "$TARGET_OUT/rgw"
 }
 
 test_add_rgw_fail() {
@@ -175,6 +204,10 @@ test_add_full_fail() {
 cleanup() {
     printf "Cleaning up %s\n" "$TARGET_OUT"
     rm -f "$TARGET_OUT"/*
+}
+
+reset_out() {
+   [ -n "$1" ] && echo > "$1"
 }
 
 usage() {
@@ -255,12 +288,14 @@ test_suite() {
   esac
 }
 
+preview=0
+
 if [[ ${#} -eq 0 ]]; then
   usage
 fi
 
 # processing options
-while getopts "f:u:ach" o; do
+while getopts "f:u:acph" o; do
     case "${o}" in
       a)
         u="all"
@@ -278,6 +313,9 @@ while getopts "f:u:ach" o; do
         ;;
       h)
         usage
+        ;;
+      p)
+        preview=1
         ;;
       *)
         usage
