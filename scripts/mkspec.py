@@ -21,9 +21,6 @@ import json
 import sys
 import re
 
-# NOTES/TODO(s):
-# 1. should we have a multilevel spec_keys validation
-
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
                    'crash', 'prometheus', 'alertmanager', 'node-exporter']
 
@@ -34,6 +31,7 @@ ALLOWED_EXTRA_KEYS = {
         'data_devices',
         'db_devices',
         'wal_devices',
+        'encrypted'
     ]
 }
 
@@ -84,16 +82,19 @@ class CephPlacementSpec(object):
         match_host = re.search(host_re, entry)
         if match_host:
             #print("\nHOST: %s" % match_host.group(1))
+            # validate the host part?
             is_valid = True
 
         name_match = re.search(name_re, entry)
         if name_match:
             #print("NAME: %s" % name_match.group(1))
+            # no validation is needed for the instance name?
             is_valid = True
 
         ip_match = re.search(ip_re, entry)
         if ip_match:
             #print("IP: %s" % ip_match.group(1))
+            # validate network?
             is_valid = True
 
         #print("-------------")
@@ -230,14 +231,14 @@ class CephDaemonSpec(object):
         # an entry for the current daemon is not found
         # no checks are required (let ceph orch take care of
         # the validation
-        if self.daemon_type not in ALLOWED_SPEC_KEYS.keys():
+        if self.daemon_type not in ALLOWED_KEYS.keys():
             return True
 
         # a basic check on the spec dict: if some constraints
         # are specified, the provided keys should be contained
         # in the ALLOWED keys
         for item in spec:
-            if item not in ALLOWED_SPEC_KEYS.get(self.daemon_type):
+            if item not in ALLOWED_KEYS.get(self.daemon_type):
                 return False
         return True
 
