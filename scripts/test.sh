@@ -55,18 +55,19 @@ test_add_minimal() {
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-      -e "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
+      -e "{'encrypted':'true', 'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}"
 
     # crash - Add the crash daemon everywhere
     python mkspec.py -d crash -p '*'
   } >> "$1"
 }
 
-
 test_add_mon() {
     # mons - Add the minimal amount of daemons
     python mkspec.py -d mon -g "${ceph_cluster['mon1']}","${ceph_cluster['mon2']}","${ceph_cluster['mon3']}" \
         -o "$TARGET_OUT"/mon
+
+    [ "$?" == 0 ] && echo "mon(s) spec exported in $TARGET_OUT"
 }
 
 test_add_mon_fail() {
@@ -77,8 +78,10 @@ test_add_osd() {
     # osds - Add the minimal amount of daemons
     python mkspec.py -d osd -i default_drive_group -n osd.default_drive_group \
       -g ${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
-      -e "{'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
+      -e "{'encrypted':true,'data_devices':{'paths': [ '/dev/ceph_vg/ceph_lv_data'] }}" \
       -o "$TARGET_OUT"/osds
+
+    [ "$?" == 0 ] && echo "OSD(s) spec exported in $TARGET_OUT"
 }
 
 test_add_osd_fail() {
@@ -102,6 +105,9 @@ test_add_monitoring() {
 
     }
   } >> "$1"
+
+  [ "$?" == 0 ] && echo "Monitoring Stack spec exported in $TARGET_OUT"
+
 }
 
 test_add_monitoring_fail() {
@@ -268,17 +274,14 @@ test_suite() {
     "mon")
         echo "Building mon(s) spec"
         test_add_mon"$fail" "$TARGET_OUT/mon"
-        echo "mon(s) spec exported in $TARGET_OUT"
         ;;
     "monitoring")
         echo "Building monitoring_stack"
         test_add_monitoring"$fail" "$TARGET_OUT/monitoring_stack"
-        echo "Monitoring Stack spec exported in $TARGET_OUT"
         ;;
     "osd")
         echo "Building osd(s) spec"
         test_add_osd"$fail" "$TARGET_OUT/osds"
-        echo "OSD(s) spec exported in $TARGET_OUT"
         ;;
     "rgw")
         echo "Building RGW spec"
