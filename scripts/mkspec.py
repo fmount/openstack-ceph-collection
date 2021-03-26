@@ -70,7 +70,6 @@ class CephPlacementSpec(object):
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
-
     # we don't need this function at this level because the
     # networks parameter is not an extension of the hosts or
     # placement spec
@@ -181,9 +180,11 @@ class CephDaemonSpec(object):
         self.hosts = hosts
         self.placement = placement_pattern
         self.labels = labels
+
         if networks is None or len(networks) < 1:
             self.networks = []
-        self.networks = networks
+        else:
+            self.networks = networks
 
         # extra keywords definition (e.g. data_devices for OSD(s)
         self.extra = {}
