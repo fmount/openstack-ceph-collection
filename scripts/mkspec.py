@@ -17,6 +17,7 @@
 
 import argparse
 import yaml
+import ipaddress
 import json
 import sys
 import re
@@ -38,6 +39,7 @@ ALLOWED_EXTRA_KEYS = {
 ALLOWED_SPEC_KEYS = {
     'rgw': [
         'rgw_frontend_port',
+        'rgw_frontend_type',
         'rgw_realm',
         'rgw_zone',
         'rgw_ip_address'
@@ -68,6 +70,10 @@ class CephPlacementSpec(object):
     def __setattr__(self, key, value):
         self.__dict__[key] = value
 
+
+    # we don't need this function at this level because the
+    # networks parameter is not an extension of the hosts or
+    # placement spec
 
     def validate_host_list(self, entry):
         # Matches from start to : or = or until end of string
@@ -104,9 +110,6 @@ class CephPlacementSpec(object):
         # if the host list is passed, this should be
         # the preferred way
         if getattr(self, 'hosts', None):
-
-            if False in list(map(self.validate_host_list, self.hosts)):
-                raise Exception("Fatal: Invalid host definition detected")
 
             spec_template = {
                 'placement': {
@@ -167,6 +170,7 @@ class CephDaemonSpec(object):
                  daemon_name: str,
                  hosts: list,
                  placement_pattern: str,
+                 networks: list,
                  spec: dict,
                  labels: list[str],
                  **kwargs: dict):
@@ -177,6 +181,9 @@ class CephDaemonSpec(object):
         self.hosts = hosts
         self.placement = placement_pattern
         self.labels = labels
+        if networks is None or len(networks) < 1:
+            self.networks = []
+        self.networks = networks
 
         # extra keywords definition (e.g. data_devices for OSD(s)
         self.extra = {}
@@ -188,6 +195,17 @@ class CephDaemonSpec(object):
 
     def __setattr__(self, key, value):
         self.__dict__[key] = value
+
+    def validate_networks(self):
+        if len(self.networks) < 1:
+            return False
+
+        for network in self.networks or []:
+            try:
+                ipaddress.ip_network(network)
+            except ValueError as e:
+                raise Exception(f'Cannot parse network {network}: {e}')
+        return True
 
     def make_daemon_spec(self):
 
@@ -206,6 +224,15 @@ class CephDaemonSpec(object):
             'service_id': self.daemon_id,
         }
 
+        # the networks dictionary
+        ntw = {}
+
+        if self.validate_networks():
+            ntw = {
+                'networks': self.networks
+            }
+
+
         # process extra parameters if present
         if not self.validate_keys(self.extra.keys(), ALLOWED_EXTRA_KEYS):
             raise Exception("Fatal: the spec should be composed by only allowed keywords")
@@ -218,7 +245,7 @@ class CephDaemonSpec(object):
                 raise Exception("Fatal: the spec should be composed by only allowed keywords")
 
         # build the resulting daemon template
-        spec_template = {**spec_template, **self.extra, **pl, **sp}
+        spec_template = {**spec_template, **ntw, **self.extra, **pl, **sp}
         return (yaml.dump(spec_template, indent=2))
 
     def validate_keys(self, spec, ALLOWED_KEYS):
@@ -293,6 +320,9 @@ def parse_opts(argv):
     parser.add_argument('-l', '--labels', metavar='labels',
                         help=("The labels of the host we're going to apply"),
                         default=[])
+    parser.add_argument('-k', '--networks', metavar='networks',
+                        help=("The network(s) where the service is goign to bind"),
+                        default=[])
     parser.add_argument('-o', '--output-file', metavar='OUT_FILE',
                         help=("Path to the output file"))
     opts = parser.parse_args(argv[1:])
@@ -306,6 +336,7 @@ if __name__ == "__main__":
     spec = {}
     labels = []
     hosts = []
+    networks = []
     pattern = None
 
     if OPTS.daemon not in ALLOWED_DAEMONS:
@@ -320,6 +351,9 @@ if __name__ == "__main__":
 
     if len(OPTS.labels) > 0:
         labels = [x for x in OPTS.labels.split(',')]
+
+    if len(OPTS.networks) > 0:
+        networks = [x for x in OPTS.networks.split(',')]
 
     if len(OPTS.spec) > 0:
         spec = json.loads(OPTS.spec.replace("'", "\""))
@@ -341,6 +375,7 @@ if __name__ == "__main__":
                 OPTS.service_name, \
                 hosts, \
                 pattern, \
+                networks, \
                 spec, \
                 labels, \
                 **extra)
@@ -375,7 +410,7 @@ if __name__ == "__main__":
 
 # ------------ EXAMPLE WITH LABELS ---------------- #
 
-#> python mkspec.py -d rgw -p host1,host2,host3 -s "{'zone' : 'default'}" -l mon,rgw -o rgw_out
+#> python mkspec.py -d rgw -p host1,host2,host3 -k 1.2.3.0/24,4.5.6.0/24 -s "{'zone' : 'default'}" -l mon,rgw -o rgw_out
 #placement:
 #  labels:
 #  - mon

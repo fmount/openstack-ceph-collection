@@ -124,31 +124,34 @@ test_add_rgw() {
   #   - host3:7.8.9.0/24
 
   # CASE 1: host1,host2,host3
+  {
   python mkspec.py -d rgw -i rgw.default -n rgw.default \
     -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
+    -k 1.2.3.0/24,4.5.6.0/24 \
     -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
-    -o "$TARGET_OUT"/rgw
+    #-o "$TARGET_OUT"/rgw
+  } >> "$1"
 
-  [ "$preview" -gt 0 ] && printf "\nCASE1: host1,host2,host3\n" && cat "$TARGET_OUT/rgw"
-  reset_out "$TARGET_OUT/rgw"
+  #[ "$preview" -gt 0 ] && printf "\nCASE1: host1,host2,host3\n" && cat "$TARGET_OUT/rgw"
+  #reset_out "$TARGET_OUT/rgw"
 
   # CASE 2: host1:subnet/mask,host2:subnet/mask,host3:subnet/mask
-  python mkspec.py -d rgw -i rgw.default -n rgw.default \
-    -g ${ceph_cluster['mon1']}:1.2.3.0/24,${ceph_cluster['mon2']}:4.5.6.0/24,${ceph_cluster['mon3']}:7.8.9.0/24 \
-    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
-    -o "$TARGET_OUT"/rgw
+  #python mkspec.py -d rgw -i rgw.default -n rgw.default \
+  #  -g ${ceph_cluster['mon1']}:1.2.3.0/24,${ceph_cluster['mon2']}:4.5.6.0/24,${ceph_cluster['mon3']}:7.8.9.0/24 \
+  #  -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+  #  -o "$TARGET_OUT"/rgw
 
-  [ "$preview" -gt 0 ] && printf "\nCASE2: host1:subnet/mask,host2:subnet/mask,host3:subnet/mask\n" && cat "$TARGET_OUT/rgw"
-  reset_out "$TARGET_OUT/rgw"
+  #[ "$preview" -gt 0 ] && printf "\nCASE2: host1:subnet/mask,host2:subnet/mask,host3:subnet/mask\n" && cat "$TARGET_OUT/rgw"
+  #reset_out "$TARGET_OUT/rgw"
 
   # CASE 3: host1:subnet/mask=name,host2:subnet/mask=name,host3:subnet/mask=name
-  python mkspec.py -d rgw -i rgw.default -n rgw.default \
-    -g ${ceph_cluster['mon1']}:1.2.3.0/24=rgw1,${ceph_cluster['mon2']}:4.5.6.0/24=rgw2,${ceph_cluster['mon3']}:7.8.9.0/24=rgw3 \
-    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
-    -o "$TARGET_OUT"/rgw
-    # >> "$1"
+  #python mkspec.py -d rgw -i rgw.default -n rgw.default \
+  #  -g ${ceph_cluster['mon1']}:1.2.3.0/24=rgw1,${ceph_cluster['mon2']}:4.5.6.0/24=rgw2,${ceph_cluster['mon3']}:7.8.9.0/24=rgw3 \
+  #  -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+  #  -o "$TARGET_OUT"/rgw
+  #  # >> "$1"
 
-  [ "$preview" -gt 0 ] && printf "\nCASE3: host1:subnet/mask=name,host2:subnet/mask=name,host3:subnet/mask=name" && cat "$TARGET_OUT/rgw"
+  #[ "$preview" -gt 0 ] && printf "\nCASE3: host1:subnet/mask=name,host2:subnet/mask=name,host3:subnet/mask=name" && cat "$TARGET_OUT/rgw"
 }
 
 test_add_rgw_fail() {
@@ -253,23 +256,27 @@ test_suite() {
         ;;
     "full")
         echo "Building Full Ceph Cluster spec"
-        test_add_full"$fail" "$TARGET_OUT/full_cluster"
-        echo "Full cluster spec exported in $TARGET_OUT"
+        if test_add_full"$fail" "$TARGET_OUT/full_cluster"; then
+            echo "Full cluster spec exported in $TARGET_OUT"
+        fi
         ;;
     "ganesha")
         echo "Building Ganesha spec"
-        test_add_ganesha"$fail" "$TARGET_OUT/ganesha"
-        echo "Ganesha spec exported in $TARGET_OUT"
+        if test_add_ganesha"$fail" "$TARGET_OUT/ganesha"; then
+            echo "Ganesha spec exported in $TARGET_OUT"
+        fi
         ;;
     "hosts")
         echo "Building host_list"
-        test_add_hosts"$fail" "$TARGET_OUT/host_list"
-        echo "Host list exported in $TARGET_OUT"
+        if test_add_hosts"$fail" "$TARGET_OUT/host_list"; then
+            echo "Host list exported in $TARGET_OUT"
+        fi
         ;;
     "minimal")
         echo "Building minimal cluster spec"
-        test_add_minimal"$fail" "$TARGET_OUT/minimal_cluster_spec"
-        echo "Minimal spec exported in $TARGET_OUT"
+        if test_add_minimal"$fail" "$TARGET_OUT/minimal_cluster_spec"; then
+            echo "Minimal spec exported in $TARGET_OUT"
+        fi
         ;;
     "mon")
         echo "Building mon(s) spec"
@@ -285,8 +292,9 @@ test_suite() {
         ;;
     "rgw")
         echo "Building RGW spec"
-        test_add_rgw"$fail" "$TARGET_OUT/rgw_spec"
-        echo "RGW spec exported in $TARGET_OUT"
+        if test_add_rgw"$fail" "$TARGET_OUT/rgw_spec"; then
+            echo "RGW spec exported in $TARGET_OUT"
+        fi
         ;;
   esac
 }
