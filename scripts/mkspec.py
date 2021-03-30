@@ -181,7 +181,7 @@ class CephDaemonSpec(object):
         self.placement = placement_pattern
         self.labels = labels
 
-        if networks is None or len(networks) < 1:
+        if not networks:
             self.networks = []
         else:
             self.networks = networks
@@ -201,7 +201,7 @@ class CephDaemonSpec(object):
         if len(self.networks) < 1:
             return False
 
-        for network in self.networks or []:
+        for network in self.networks:
             try:
                 ipaddress.ip_network(network)
             except ValueError as e:
