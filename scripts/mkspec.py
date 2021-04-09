@@ -42,13 +42,15 @@ ALLOWED_SPEC_KEYS = {
         'rgw_frontend_type',
         'rgw_realm',
         'rgw_zone',
-        'rgw_ip_address'
+        'rgw_ip_address',
+        'rgw_frontend_ssl_certificate'
     ],
     'nfs': [
         'namespace',
         'pool'
     ]
 }
+
 
 class CephPlacementSpec(object):
     def __init__(self,
@@ -247,7 +249,7 @@ class CephDaemonSpec(object):
 
         # build the resulting daemon template
         spec_template = {**spec_template, **ntw, **self.extra, **pl, **sp}
-        return (yaml.dump(spec_template, indent=2))
+        return (yaml.safe_dump(spec_template, indent=2))
 
     def validate_keys(self, spec, ALLOWED_KEYS):
         '''
@@ -277,6 +279,12 @@ class CephDaemonSpec(object):
         return '%s.%s' % (self.daemon_type, self.daemon_id)
 
 
+def repr_str(dumper, data):
+    if '\n' in data:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+    return dumper.org_represent_str(data)
+
+
 def export(content):
     if len(content) > 0:
         if OPTS.output_file is not None and len(OPTS.output_file) > 0:
@@ -290,6 +298,9 @@ def export(content):
     else:
         print('Nothing to dump!')
 
+
+yaml.SafeDumper.org_represent_str = yaml.SafeDumper.represent_str
+yaml.add_representer(str, repr_str, Dumper=yaml.SafeDumper)
 
 # -- MAIN --
 
