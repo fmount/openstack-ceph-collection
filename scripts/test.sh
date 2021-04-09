@@ -120,7 +120,8 @@ test_add_rgw() {
   python mkspec.py -d rgw -i rgw.default -n rgw.default \
     -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
     -k 1.2.3.0/24,4.5.6.0/24 \
-    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default'}" \
+    -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default', \
+         'rgw_frontend_ssl_certificate': '***REMOVED***}" \
     #-o "$TARGET_OUT"/rgw
   } >> "$1"
 
