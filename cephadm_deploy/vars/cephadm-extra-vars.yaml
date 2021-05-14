@@ -46,7 +46,7 @@ tripleo_cephadm_container_tag: v6.0.0-stable-6.0-pacific-centos-8-x86_64
 tripleo_cephadm_crush_rules: []
 tripleo_cephadm_dashboard_enabled: false
 tripleo_cephadm_fsid: 4b5c8c0a-ff60-454b-a1b4-9747aa737d19
-tripleo_cephadm_grafana_admin_password: Dsda36In0uDDxsUfjBY5zf7Zq
+tripleo_cephadm_grafana_admin_password: ''
 tripleo_cephadm_grafana_admin_user: admin
 tripleo_cephadm_grafana_container_image: quay.ceph.io/app-sre/grafana:6.7.4
 tripleo_cephadm_grafana_dashboards_path: ''
