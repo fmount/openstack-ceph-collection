@@ -1,0 +1,7 @@
+distribute_private_key: true
+ssh_servers:
+  - ceph-node-00
+  - ceph-node-01
+  - ceph-node-02
+tripleo_admin_generate_key: false
+tripleo_admin_user: ceph-admin

@@ -1,0 +1,23 @@
+[local]
+localhost ansible_user=fmount ansible_ssh_port=2242 ansible_private_key_file=/home/fmount/.ssh/kcli
+
+[ceph_mgr]
+ceph-node-00 ansible_user=root ansible_host=192.168.122.248
+ceph-node-01 ansible_user=root ansible_host=192.168.122.166
+ceph-node-02 ansible_user=root ansible_host=192.168.122.214
+
+[ceph_mon]
+ceph-node-00 ansible_user=root ansible_host=192.168.122.248
+ceph-node-01 ansible_user=root ansible_host=192.168.122.166
+ceph-node-02 ansible_user=root ansible_host=192.168.122.214
+
+[ceph_osd]
+ceph-node-00 ansible_user=root ansible_host=192.168.122.248
+ceph-node-01 ansible_user=root ansible_host=192.168.122.166
+ceph-node-02 ansible_user=root ansible_host=192.168.122.214
+
+[undercloud:children]
+local
+
+[overcloud:children]
+ceph_mon
