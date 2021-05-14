@@ -60,14 +60,14 @@ tripleo_cephadm_node_exporter_container_image: quay.ceph.io/prometheus/node-expo
 tripleo_cephadm_prometheus_container_image: quay.ceph.io/prometheus/prometheus:v2.7.2
 tripleo_cephadm_prometheus_port: 9092
 tripleo_cephadm_bootstrap_host: ceph-node-00
-tripleo_cephadm_first_mon_ip: 192.168.122.248
+tripleo_cephadm_first_mon_ip: 192.168.122.102
 tripleo_cephadm_spec_on_bootstrap: false
 tripleo_cephadm_pools: [{'name': 'vms', 'pg_num': '8', 'rule_name': 'replicated_rule', 'application': 'rbd'}, {'name': 'images', 'pg_num': '8', 'rule_name': 'replicated_rule', 'application': 'rbd'}]
 tripleo_cephadm_keys: [{'name': 'client.***REMOVED***', 'key': 'AQC+vYNXgDAgAhAAc8UoYt+OTz5uhV7ItLdwUw==', 'mode': '0600', 'caps': {'mgr': 'allow *', 'mon': 'profile rbd', 'osd': 'profile rbd pool=vms, profile rbd pool=images'}}, {'name': 'client.radosgw', 'key': 'AQDLOh1VgEp6FRAAFzT7Zw+Y9V6JJExQAsRnRQ==', 'mode': '0600', 'caps': {'mgr': 'allow *', 'mon': 'allow rw', 'osd': 'allow rwx'}}, {'name': 'client.manila', 'key': 'AQDXrJtgAAAAABAAvY//RcT3sKX2vrrz2DgyMA==', 'mode': '0600', 'caps': {'mgr': 'allow *', 'mon': "allow r, allow command 'auth del', allow command 'auth caps', allow command 'auth get', allow command 'auth get-or-create'", 'mds': 'allow *', 'osd': 'allow rw'}}]
 tripleo_cephadm_dashboard_frontend_vip: 192.168.122.1
 service_net_map: {'ceph_cluster_network': 'ctlplane', 'ceph_dashboard_network': 'ctlplane', 'ceph_grafana_network': 'ctlplane', 'ceph_mon_network': 'ctlplane', 'ceph_rgw_network': 'ctlplane', 'ganesha_network': 'ctlplane', 'haproxy_network': 'ctlplane', 'public_network': 'ctlplane'}
 tripleo_enabled_services: ['ceph_client', 'ceph_grafana', 'ceph_mds', 'ceph_mgr', 'ceph_mon', 'ceph_nfs', 'ceph_rgw', 'ceph_osd', 'manila_api']
-tripleo_cephadm_fqdn: "True"
+tripleo_cephadm_fqdn: false
 tripleo_cephadm_spec_ansible_host: "/home/ceph-admin/specs/ceph_spec.yaml"
 tripleo_cephadm_spec_inventory: "/home/ceph-admin/specs/inventory.yaml"
 tripleo_cephadm_internal_tls_enabled: "False"
@@ -79,3 +79,5 @@ ceph_osd_spec:
   data_devices:
     all: true
 ceph_spec_fqdn: false
+container_cli: podman
+tripleo_cephadm_wait_for_mons: false
