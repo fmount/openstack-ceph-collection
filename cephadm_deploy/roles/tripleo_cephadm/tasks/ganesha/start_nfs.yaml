@@ -36,8 +36,10 @@
     - name: reload dbus configuration
       command: "killall -SIGHUP dbus-daemon"
   when: tripleo_cephadm_ceph_nfs_dynamic_exports | bool
+  delegate_to: "{{ nfs_node }}"
 
 - name: Render config files
+  delegate_to: "{{ nfs_node }}"
   block:
     - name: Make sure /etc/ganesha exists
       file:
@@ -71,7 +73,7 @@
         src: ganesha.conf.j2
         dest: /etc/ganesha/ganesha.conf
       become: true
-      delegate_to: "{{ nfs_node }}"
+      #delegate_to: "{{ nfs_node }}"
 
     - name: Render ganesha systemd unit
       template:
@@ -81,7 +83,7 @@
         group: "root"
         mode: "0644"
       become: true
-      delegate_to: "{{ nfs_node }}"
+      #delegate_to: "{{ nfs_node }}"
 
     - name: systemd start nfs container
       systemd:

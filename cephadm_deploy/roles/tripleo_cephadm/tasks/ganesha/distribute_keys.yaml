@@ -14,6 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+- name: Make sure bootstrap-rgw exist
+  file:
+    name: /var/lib/ceph/bootstrap-rgw/
+    state: directory
+    owner: "167"
+    group: "167"
+    mode: "0755"
+  delegate_to: "{{ nfs_node }}"
+
 - name: copy ceph key(s) if needed
   copy:
     dest: "{{ item.item.path }}"
@@ -22,3 +31,4 @@
     group: "167"
     mode: "0755"
   with_items: "{{ _rgw_keys.results }}"
+  delegate_to: "{{ nfs_node }}"
