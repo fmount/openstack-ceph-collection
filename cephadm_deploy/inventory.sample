@@ -4,36 +4,36 @@ local:
     localhost:
       ansible_user: $USER
       ansible_port: $PORT
-      ansible_private_key_file: $HOME/.ssh/kcli
+      ansible_private_key_file: $HOME/.ssh/$KEY
 Controller:
   hosts:
     ceph-node-00:
       ansible_user: root
-      ansible_host: 192.168.122.248
+      ansible_host: {{ ceph_node_00 }}
       canonical_hostname: ceph-node-00.cephlab.local
-      ctlplane_ip: 192.168.122.248
+      ctlplane_ip: {{ ceph_node_00 }}
     ceph-node-01:
       ansible_user: root
-      ansible_host: 192.168.122.166
+      ansible_host: {{ ceph_node_01 }}
       canonical_hostname: ceph-node-01.cephlab.local
     ceph-node-02:
       ansible_user: root
-      ansible_host: 192.168.122.214
+      ansible_host: {{ ceph_node_02 }}
       canonical_hostname: ceph-node-02.cephlab.local
 CephStorage:
   hosts:
     ceph-node-00:
       ansible_user: root
-      ansible_host: 192.168.122.248
+      ansible_host: {{ ceph_node_00 }}
       canonical_hostname: ceph-node-00.cephlab.local
-      ctlplane_ip: 192.168.122.248
+      ctlplane_ip: {{ ceph_node_00 }}
     ceph-node-01:
       ansible_user: root
-      ansible_host: 192.168.122.166
+      ansible_host: {{ ceph_node_01 }}
       canonical_hostname: ceph-node-01.cephlab.local
     ceph-node-02:
       ansible_user: root
-      ansible_host: 192.168.122.214
+      ansible_host: {{ ceph_node_02 }}
       canonical_hostname: ceph-node-02.cephlab.local
 ceph_mon:
   children:
@@ -44,6 +44,15 @@ ceph_mgr:
 ceph_osd:
   children:
     CephStorage: {}
+ceph_rgw:
+  children:
+    Controller: {}
+ceph_mds:
+  children:
+    Controller: {}
+ceph_nfs:
+  children:
+    Controller: {}
 overcloud:
   children:
     Controller: {}

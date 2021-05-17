@@ -1,2 +1,3 @@
 cephadm_deploy/inventory.yaml
-cephadm_deploy/ansible.log
+cephadm_deploy/vars/cephadm-extra-vars.yaml
+*.log
