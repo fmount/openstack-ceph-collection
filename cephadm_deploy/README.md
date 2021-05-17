@@ -18,9 +18,9 @@ This means:
 ## KCLI and nodes deployment
 
 KCLI is the tool used to deploy a given number of Ceph Nodes. This can be done using the Ceph
-plan file (located in the nodes/ directory) that can be customized adding or removing options,
-defining new parameters to reflect the status of your environment or making it able to execute
-a specific script at bootstrap time.
+plan file (located in the [nodes/](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/nodes)
+directory) that can be customized adding or removing options, defining new parameters to reflect
+the status of your environment or making it able to execute a specific script at bootstrap time.
 This section is already automated in the build_env.sh script, but can also be executed before
 the whole script execution:
 
