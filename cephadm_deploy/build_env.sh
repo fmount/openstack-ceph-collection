@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-set -x
+# set -x
 
-#DEPLOYER=$(which kcli || exit -1)
 PODMAN=$(which podman)
-SSHPASS=$(which sshpass)
 LVIRT_IMAGES=/var/lib/libvirt/images
 LVIRT_RUN=/var/run/libvirt
 KCLI="karmab/kcli"
@@ -53,7 +51,6 @@ ping_nodes() {
 
 distribute_keys() {
     local ip="$1"
-    #"$SSHPASS" -f "$PWD"/psw.txt ssh-copy-id -i "$DEFAULT_SSH_KEY" root@"$ip"
     ssh-copy-id -o StrictHostKeyChecking=no -i "$DEFAULT_SSH_KEY" root@"$ip"
 }
 
