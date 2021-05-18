@@ -1,4 +1,4 @@
-# Deploy a TripleO free LAB
+# Deploy a TripleO free Ceph LAB
 
 The purpose of this section is to create a POC where cephadm and its related tripleo-ansible
 playbooks can be run without the complexity of the whole TripleO context.
