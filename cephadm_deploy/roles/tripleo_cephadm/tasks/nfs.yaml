@@ -49,6 +49,7 @@
   become: true
   with_items:
     - { name: "client.bootstrap-rgw", path: "/var/lib/ceph/bootstrap-rgw/{{ tripleo_cephadm_cluster }}.keyring", copy_key: true }
+    # - { name: "client.{{ tripleo_cephadm_ceph_nfs_ceph_user }}", path: "/var/lib/ceph/bootstrap-rgw/{{ tripleo_cephadm_cluster }}.keyring" }
 
 - name: Distribute Ceph keys to the nfs nodes
   include_tasks: ganesha/distribute_keys.yaml
