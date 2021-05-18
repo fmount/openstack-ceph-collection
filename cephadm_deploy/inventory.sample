@@ -16,10 +16,12 @@ Controller:
       ansible_user: root
       ansible_host: {{ ceph_node_01 }}
       canonical_hostname: ceph-node-01.cephlab.local
+      ctlplane_ip: {{ ceph_node_01 }}
     ceph-node-02:
       ansible_user: root
       ansible_host: {{ ceph_node_02 }}
       canonical_hostname: ceph-node-02.cephlab.local
+      ctlplane_ip: {{ ceph_node_02 }}
 CephStorage:
   hosts:
     ceph-node-00:
@@ -31,10 +33,12 @@ CephStorage:
       ansible_user: root
       ansible_host: {{ ceph_node_01 }}
       canonical_hostname: ceph-node-01.cephlab.local
+      ctlplane_ip: {{ ceph_node_01 }}
     ceph-node-02:
       ansible_user: root
       ansible_host: {{ ceph_node_02 }}
       canonical_hostname: ceph-node-02.cephlab.local
+      ctlplane_ip: {{ ceph_node_02 }}
 ceph_mon:
   children:
     Controller: {}
