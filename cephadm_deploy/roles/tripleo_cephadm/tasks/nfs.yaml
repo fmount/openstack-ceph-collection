@@ -49,7 +49,6 @@
   become: true
   with_items:
     - { name: "client.bootstrap-rgw", path: "/var/lib/ceph/bootstrap-rgw/{{ tripleo_cephadm_cluster }}.keyring", copy_key: true }
-    # - { name: "client.{{ tripleo_cephadm_ceph_nfs_ceph_user }}", path: "/var/lib/ceph/bootstrap-rgw/{{ tripleo_cephadm_cluster }}.keyring" }
 
 - name: Distribute Ceph keys to the nfs nodes
   include_tasks: ganesha/distribute_keys.yaml
@@ -60,10 +59,20 @@
   loop_control:
     loop_var: node
 
+- name: get file
+  command: |
+    {{ container_cli }} run --rm --entrypoint=cat \
+    {{ tripleo_cephadm_container_ns + '/' + tripleo_cephadm_container_image + ':' + tripleo_cephadm_container_tag }} \
+    /etc/dbus-1/system.d/org.ganesha.nfsd.conf
+  register: _dbus_file
+  run_once: true
+  changed_when: false
+
 - name: Render Ganesha templates and files
   include_tasks: ganesha/start_nfs.yaml
   vars:
     nfs_node: "{{ node }}"
+    dbus_ganesha_file: "{{ _dbus_file }}"
   loop: "{{ groups['ceph_nfs'] }}"
   loop_control:
     loop_var: node

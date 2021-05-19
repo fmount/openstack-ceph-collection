@@ -16,15 +16,6 @@
 
 - name: dbus related tasks
   block:
-    - name: get file
-      command: |
-        {{ container_cli }} run --rm --entrypoint=cat \
-        {{ tripleo_cephadm_container_ns + '/' + tripleo_cephadm_container_image + ':' + tripleo_cephadm_container_tag }} \
-        /etc/dbus-1/system.d/org.ganesha.nfsd.conf
-      register: dbus_ganesha_file
-      run_once: true
-      changed_when: false
-
     - name: create dbus service file
       copy:
         content: "{{ dbus_ganesha_file.stdout }}"
