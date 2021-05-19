@@ -22,8 +22,8 @@ cephfs_metadata_pool:
     rule_name: replicated_rule
 cluster_network: 192.168.122.0/24
 public_network: 192.168.122.0/24
-tripleo_cephadm_ganesha_address_block: 192.168.24.0/24
-tripleo_cephadm_monitoring_address_block: 192.168.24.0/24
+tripleo_cephadm_ganesha_address_block: 192.168.122.0/24
+tripleo_cephadm_monitoring_address_block: 192.168.122.0/24
 radosgw_address_block: 192.168.122.0/24
 radosgw_frontend_port: 8080
 radosgw_keystone: true
