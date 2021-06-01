@@ -94,16 +94,16 @@ test_add_osd_fail() {
 
 test_add_monitoring() {
 
-  monitoring_stack=("grafana" "prometheus" "alertmanager")
+  declare -A monitoring_stack=(["grafana"]=3100 ["alertmanager"]=9094 ["prometheus"]=9095 ["node-exporter"]=9100 )
 
-    {
-    # node-exporter - Add this service everywhere in the cluster
-    python mkspec.py -d node-exporter -p "*"
+  {
+  # node-exporter - Add this service everywhere in the cluster
+  python mkspec.py -d node-exporter -p "*" -k 1.2.3.0/24 -s "{'port': ${monitoring_stack['node-exporter']} }"
 
-    for d in "${monitoring_stack[@]}"; {
-      python mkspec.py -d "$d" -l mon
+  for d in "${!monitoring_stack[@]}"; {
+    python mkspec.py -d "$d" -l mon -k 1.2.3.0/24 -s "{'port': ${monitoring_stack[$d]} }"
 
-    }
+  }
   } >> "$1"
 
   [ "$?" == 0 ] && echo "Monitoring Stack spec exported in $TARGET_OUT"
