@@ -118,9 +118,10 @@ def run_module():
     data_map = json.loads(data)
 
     for section, section_map in data_map.items():
-       for key, value in section_map.items():
-           cmd = ceph_conf_set(module, section, key, value, container_image=container_image)
-           rc, cmd, out, err = exec_command(module, cmd)
+        for key, value in section_map.items():
+            if section in (['global', 'mon', 'mgr', 'osd', 'mds', 'client']):
+                cmd = ceph_conf_set(module, section, key, value, container_image=container_image)
+                rc, cmd, out, err = exec_command(module, cmd)
 
     exit_module(module=module, out=out, rc=rc, cmd=cmd, err=err, startd=startd, changed=changed)
 
