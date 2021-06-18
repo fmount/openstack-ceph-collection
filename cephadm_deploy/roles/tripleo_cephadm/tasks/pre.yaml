@@ -100,14 +100,29 @@
   become: true
   when: tripleo_cephadm_spec_stat_host.stat.exists
 
+- name: push tripleo_cephadm_spec_inventory to bootstrap node
+  copy:
+    src: "{{ inventory_file }}"
+    dest: "{{ tripleo_cephadm_spec_inventory }}"
+    owner: "{{ tripleo_cephadm_ssh_user }}"
+    group: "{{ tripleo_cephadm_ssh_user }}"
+    mode: '0644'
+  become: true
+
+- name: genereate ceph_spec for bootstrap
+  ceph_spec_bootstrap:
+    new_ceph_spec: "{{ tripleo_run_cephadm_spec_path }}"
+    tripleo_ansible_inventory: "{{ tripleo_cephadm_spec_inventory }}"
+    fqdn: "{{ ceph_spec_fqdn }}"
+    osd_spec: "{{ ceph_osd_spec }}"
+  when:
+    - tripleo_cephadm_dynamic_spec
+
 - name: generate pre ceph.conf configuration file for initial bootstrap
-  action: config_template
-  args:
+  template:
     src: "ceph.conf.j2"
     dest: "{{ tripleo_cephadm_bootstrap_conf }}"
     owner: "{{ tripleo_cephadm_uid }}"
     group: "{{ tripleo_cephadm_uid }}"
     mode: "0644"
-    config_overrides: "{{ tripleo_cephadm_conf_overrides }}"
-    config_type: ini
   become: true
