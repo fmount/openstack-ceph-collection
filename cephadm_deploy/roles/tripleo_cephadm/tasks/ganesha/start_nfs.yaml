@@ -66,15 +66,12 @@
       become: true
 
     - name: generate ganesha idmap.conf file
-      action: config_template
-      args:
+      template:
         src: "idmap.conf.j2"
         dest: "{{ tripleo_cephadm_idmap_conf }}"
         owner: "root"
         group: "root"
         mode: "0644"
-        config_overrides: "{{ tripleo_cephadm_idmap_overrides }}"
-        config_type: ini
 
     - name: Render ganesha systemd unit
       template:

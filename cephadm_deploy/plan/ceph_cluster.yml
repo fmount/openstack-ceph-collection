@@ -32,8 +32,6 @@ parameters:
  - echo {{ admin_password  }} | passwd --stdin root
  - hostnamectl set-hostname {{ prefix }}-node-0{{ number }}
  - hostnamectl set-hostname --transient {{ prefix }}-node-0{{ number }}
- {% if number == 0 %}
  scripts:
   - bootstrap-cluster.sh
- {% endif %}
 {% endfor %}

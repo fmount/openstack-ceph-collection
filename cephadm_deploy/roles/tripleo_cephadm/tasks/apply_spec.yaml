@@ -44,6 +44,19 @@
   when:
     - not (ceph_orch_status.stdout | from_json).available
 
+- name: ceph.conf and keyring distribution
+  block:
+    - name: Distribute ceph.conf
+      command: |
+        {{ tripleo_cephadm_ceph_cli }} config set mgr mgr/cephadm/manage_etc_ceph_ceph_conf true
+      changed_when: false
+      become: true
+    - name: Distribute the admin keyring to the _admin group
+      command: |
+        {{ tripleo_cephadm_ceph_cli }} orch client-keyring set client.admin label:_admin
+      changed_when: false
+      become: true
+
 - name: Set container images used by the applied services
   include_tasks: config_container_images.yaml
 
