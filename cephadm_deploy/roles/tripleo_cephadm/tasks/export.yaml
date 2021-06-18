@@ -77,3 +77,4 @@
     dest: "{{ tripleo_ceph_client_vars }}"
     mode: 0644
     force: true
+  delegate_to: localhost

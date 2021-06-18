@@ -64,7 +64,17 @@
         src: ganesha.conf.j2
         dest: /etc/ganesha/ganesha.conf
       become: true
-      #delegate_to: "{{ nfs_node }}"
+
+    - name: generate ganesha idmap.conf file
+      action: config_template
+      args:
+        src: "idmap.conf.j2"
+        dest: "{{ tripleo_cephadm_idmap_conf }}"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        config_overrides: "{{ tripleo_cephadm_idmap_overrides }}"
+        config_type: ini
 
     - name: Render ganesha systemd unit
       template:

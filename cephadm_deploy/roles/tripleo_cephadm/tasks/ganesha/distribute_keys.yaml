@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-- name: Make sure bootstrap-rgw exist
+- name: create keyring directory
   file:
     name: /var/lib/ceph/bootstrap-rgw/
     state: directory
