@@ -56,6 +56,22 @@
         {{ tripleo_cephadm_ceph_cli }} orch client-keyring set client.admin label:_admin
       changed_when: false
       become: true
+  when: tripleo_cephadm_distribute_key_conf_cephadm
+
+- name: ceph.conf and keyring distribution
+  become: true
+  block:
+    - include: distribute_conf_and_keys.yaml
+      name: Distribute ceph conf and admin keyring via ansible
+      with_items: "{{ groups['ceph_mon'] }}"
+      loop_control:
+        loop_var: node
+      vars:
+        bootstrap_node: "{{ groups['ceph_mon'][0] }}"
+        admin_node: "{{ node }}"
+  when:
+    - not tripleo_cephadm_distribute_key_conf_cephadm
+    - bootstrap_node != admin_node
 
 - name: Set container images used by the applied services
   include_tasks: config_container_images.yaml
