@@ -33,6 +33,7 @@
 - name: Create the mds Daemon spec definition
   become: true
   ceph_mkspec:
+    cluster: "{{ tripleo_cephadm_cluster }}"
     service_type: mds
     apply: true
     hosts: "{{ _hosts | unique }}"
