@@ -14,12 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-- name: Stat ceph conf file on bootstrap node
-  stat:
-    path: "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.conf"
-  register: tripleo_cephadm_ceph_conf_stat
-  become: true
-
 - name: Ensure tripleo_cephadm_config_home (e.g. /etc/ceph) exists
   file:
     path: "{{ tripleo_cephadm_config_home }}"
@@ -30,11 +24,9 @@
 - name: push files to the other nodes of cluster
   become: true
   synchronize:
-    src: "{{ item }}"
-    dest: "{{ item }}"
-    # mode: "{{ '600' if item[0] | regex_search('.*.keyring$') else '644' }}"
+    src: "{{ item.item }}"
+    dest: "{{ item.item }}"
     mode: pull
   delegate_to: "{{ admin_node }}"
   with_items:
-    - "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.conf"
-    - "{{ tripleo_cephadm_admin_keyring }}"
+    - "{{ slurp_content.results }}"
