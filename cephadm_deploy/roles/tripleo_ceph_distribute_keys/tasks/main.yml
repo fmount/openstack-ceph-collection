@@ -1,0 +1,21 @@
+---
+# tasks file for tripleo_ceph_distribute_keys
+- name: ceph.conf and keyring distribution
+  become: true
+  block:
+    - name: Fetch conf/key from bootstrap node
+      slurp:
+        src: '{{ item }}'
+      register: slurp_content
+      loop:
+        - "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.conf"
+        - "{{ tripleo_cephadm_admin_keyring }}"
+      delegate_to: "{{ groups['ceph_mon'][0] }}"
+
+    - include: distribute_conf_and_keys.yaml
+      name: Distribute ceph conf and admin keyring via ansible
+      with_items: "{{ groups['ceph_mon'] }}"
+      vars:
+        - files: "{{ slurp_content }}"
+  vars:
+    - bootstrap_node: "{{ groups['ceph_mon'][0] }}"
