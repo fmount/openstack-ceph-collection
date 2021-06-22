@@ -22,9 +22,8 @@
 
 - name: push the admin keyring to the other nodes of the cluster
   copy:
-    dest: "{{ item.source }}"
-    content: "{{ item.content | b64decode }}"
+    dest: "{{ slurp_key.source }}"
+    content: "{{ slurp_key.content | b64decode }}"
     mode: "0600"
     owner: "{{ ceph_uid }}"
     group: "{{ ceph_uid }}"
-  with_items: "{{ slurp_content.results }}"
