@@ -1,0 +1,7 @@
+---
+# defaults file for tripleo_ceph_distribute_keys
+tripleo_cephadm_config_home: /etc/ceph
+tripleo_cephadm_cluster: "ceph"
+tripleo_cephadm_keyring_prefix: "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.client"
+tripleo_cephadm_admin_keyring: "{{ tripleo_cephadm_keyring_prefix }}.admin.keyring"
+ceph_uid: 167

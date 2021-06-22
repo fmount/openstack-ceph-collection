@@ -14,7 +14,7 @@
 #   under the License.
 
 - name: Deploy Ceph with cephadm
-  hosts: ceph_mon[0]
+  hosts: ceph1_mon[0]
   tasks:
     - name: Satisfy Ceph prerequisites
       import_role:
@@ -73,12 +73,19 @@
         name: tripleo_cephadm
         tasks_from: keys
 
-    - name: Export configuration for tripleo_ceph_client
-      import_role:
-        name: tripleo_cephadm
-        tasks_from: export
+    # - name: Export configuration for tripleo_ceph_client
+    #  import_role:
+    #    name: tripleo_cephadm
+    #    tasks_from: export
 
     - name: Show the Ceph cluster status
       import_role:
         name: tripleo_cephadm
         tasks_from: post
+
+- name: Distribute the admin keyring
+  hosts: ceph_mon
+  tasks:
+    - name: Distribute the admin keyring
+      import_role:
+        name: tripleo_ceph_distribute_keys
