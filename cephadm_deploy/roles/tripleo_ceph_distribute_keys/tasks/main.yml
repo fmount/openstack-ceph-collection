@@ -3,16 +3,13 @@
   become: true
   block:
     - name: Fetch conf/key from bootstrap node
+      tags: 'fetch_admin_key'
       slurp:
         src: "{{ tripleo_cephadm_admin_keyring }}"
       register: slurp_key
       delegate_to: "{{ groups['ceph_mon'][0] }}"
       run_once: true
-
     - include: distribute_conf_and_keys.yaml
       name: Distribute the admin keyring via ansible
-      #with_items: "{{ groups['ceph_mon'] | difference([bootstrap_node]) }}"
-      #vars:
-        #  - files: "{{ slurp_content }}"
   vars:
     - bootstrap_node: "{{ groups['ceph_mon'][0] }}"

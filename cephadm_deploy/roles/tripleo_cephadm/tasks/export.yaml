@@ -72,6 +72,7 @@
     - cephadm_extract_keys
 
 - name: Save tripleo_ceph_client_vars file
+  become: true
   template:
     src: templates/ceph_client.yaml.j2
     dest: "{{ tripleo_ceph_client_vars }}"

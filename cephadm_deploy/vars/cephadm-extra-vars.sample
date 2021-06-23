@@ -89,3 +89,4 @@ ceph_spec_fqdn: false
 container_cli: podman
 tripleo_cephadm_wait_for_mons: false
 tripleo_cephadm_num_osd_expected: "{{ groups['ceph_osd'] | default([]) | length }}"
+tripleo_cephadm_distribute_key_conf_cephadm: false
