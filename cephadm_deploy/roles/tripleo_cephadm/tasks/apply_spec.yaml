@@ -48,7 +48,7 @@
   block:
     - name: Distribute ceph.conf
       command: |
-        {{ tripleo_cephadm_ceph_cli }} config set mgr mgr/cephadm/manage_etc_ceph_ceph_conf true
+        {{ tripleo_cephadm_ceph_cli }} config set mgr mgr/cephadm/manage_etc_ceph_ceph_conf false
       changed_when: false
       become: true
     - name: Distribute the admin keyring to the _admin group
@@ -57,31 +57,6 @@
       changed_when: false
       become: true
   when: tripleo_cephadm_distribute_key_conf_cephadm
-
-- name: ceph.conf and keyring distribution
-  become: true
-  block:
-    - name: Fetch conf/key from bootstrap node
-      slurp:
-        src: '{{ item }}'
-      register: slurp_content
-      loop:
-        - "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.conf"
-        - "{{ tripleo_cephadm_admin_keyring }}"
-
-    - include: distribute_conf_and_keys.yaml
-      name: Distribute ceph conf and admin keyring via ansible
-      with_items: "{{ groups['ceph_mon'] }}"
-      loop_control:
-        loop_var: node
-      when: bootstrap_node != admin_node
-      vars:
-        - admin_node: "{{ node }}"
-        - files: "{{ slurp_content }}"
-  vars:
-    - bootstrap_node: "{{ groups['ceph_mon'][0] }}"
-  when:
-    - not tripleo_cephadm_distribute_key_conf_cephadm
 
 - name: Set container images used by the applied services
   include_tasks: config_container_images.yaml

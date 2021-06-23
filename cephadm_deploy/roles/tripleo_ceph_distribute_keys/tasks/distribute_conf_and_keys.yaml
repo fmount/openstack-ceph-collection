@@ -27,3 +27,4 @@
     mode: "0600"
     owner: "{{ ceph_uid }}"
     group: "{{ ceph_uid }}"
+  when: inventory_hostname != bootstrap_node
