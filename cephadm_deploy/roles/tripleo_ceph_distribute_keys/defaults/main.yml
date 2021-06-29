@@ -1,7 +1,6 @@
 ---
-# defaults file for tripleo_ceph_distribute_keys
-tripleo_cephadm_config_home: /etc/ceph
-tripleo_cephadm_cluster: "ceph"
-tripleo_cephadm_keyring_prefix: "{{ tripleo_cephadm_config_home }}/{{ tripleo_cephadm_cluster }}.client"
-tripleo_cephadm_admin_keyring: "{{ tripleo_cephadm_keyring_prefix }}.admin.keyring"
-ceph_uid: 167
+tripleo_ceph_distribute_keys_config_home: /etc/ceph
+tripleo_ceph_distribute_keys_cluster: "ceph"
+tripleo_ceph_distribute_keys_keyring_prefix: "{{ tripleo_ceph_distribute_keys_config_home }}/{{ tripleo_ceph_distribute_keys_cluster }}.client"
+tripleo_ceph_distribute_keys_admin_keyring: "{{ tripleo_ceph_distribute_keys_keyring_prefix }}.admin.keyring"
+tripleo_ceph_distribute_keys_ceph_uid: 167

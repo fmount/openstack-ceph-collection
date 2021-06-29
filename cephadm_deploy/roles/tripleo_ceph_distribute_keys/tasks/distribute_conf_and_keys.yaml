@@ -16,7 +16,7 @@
 
 - name: Ensure tripleo_cephadm_config_home (e.g. /etc/ceph) exists
   file:
-    path: "{{ tripleo_cephadm_config_home }}"
+    path: "{{ tripleo_ceph_distribute_keys_config_home }}"
     state: directory
   become: true
 
@@ -25,6 +25,6 @@
     dest: "{{ slurp_key.source }}"
     content: "{{ slurp_key.content | b64decode }}"
     mode: "0600"
-    owner: "{{ ceph_uid }}"
-    group: "{{ ceph_uid }}"
+    owner: "{{ tripleo_ceph_distribute_keys_ceph_uid }}"
+    group: "{{ tripleo_ceph_distribute_keys_ceph_uid }}"
   when: inventory_hostname != bootstrap_node
