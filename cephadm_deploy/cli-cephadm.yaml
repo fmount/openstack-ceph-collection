@@ -73,10 +73,10 @@
         name: tripleo_cephadm
         tasks_from: keys
 
-    - name: Export configuration for tripleo_ceph_client
-      import_role:
-        name: tripleo_cephadm
-        tasks_from: export
+    #- name: Export configuration for tripleo_ceph_client
+    #  import_role:
+    #    name: tripleo_cephadm
+    #    tasks_from: export
 
     - name: Show the Ceph cluster status
       import_role:
@@ -89,3 +89,6 @@
     - name: Distribute the admin keyring
       import_role:
         name: tripleo_ceph_distribute_keys
+      vars:
+        tripleo_ceph_distribute_keys_config_home: "{{ tripleo_cephadm_config_home | default('/etc/ceph') }}"
+        tripleo_ceph_distribute_keys_cluster: "{{ tripleo_cephadm_cluster | default('ceph') }}"
