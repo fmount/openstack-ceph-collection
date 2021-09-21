@@ -83,7 +83,7 @@ $SUDO $CEPHADM --image $IMAGE_PACIFIC \
 
 # let's add some osds
 if [ "$ALL_AVAILABLE_DEVICES" -eq 1 ]; then
-    $SUDO $CEPHADM orch apply osd --all-available-devices
+    $SUDO $CEPHADM shell ceph orch apply osd --all-available-devices
 else
     build_osds_from_list
 fi
