@@ -7,6 +7,8 @@ ORIG_CONFIG="$HOME/bootstrap_ceph.conf"
 CONFIG="/etc/ceph/ceph.conf"
 KEYRING="/etc/ceph/ceph.client.admin.keyring"
 CEPH_PUB_KEY="/etc/ceph/ceph.pub"
+ALL_AVAILABLE_DEVICES=0
+DEVICES_LIST=("/dev/ceph_vg/ceph_lv_data")
 
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
 IMAGE_PACIFIC=${IMAGE_PACIFIC:-'quay.io/ceph/ceph:v16.2.6'}
@@ -36,8 +38,15 @@ install_cephadm() {
 }
 
 rm_cluster() {
-  $SUDO "$CEPHADM" rm-cluster --fsid "$FSID" --force
+  $SUDO "$CEPHADM" rm-cluster --zap-osds --fsid "$FSID" --force
   echo "[CEPHDM] Cluster deleted"
+}
+
+build_osds_from_list() {
+  for item in "${DEVICES_LIST[@]}"; do
+    echo "Creating osd $item on node $HOSTNAME"
+    $SUDO $CEPHADM shell ceph orch daemon add osd $HOSTNAME:$item
+  done
 }
 
 install_cephadm
@@ -65,3 +74,11 @@ $SUDO $CEPHADM --image $IMAGE_PACIFIC \
       --skip-dashboard \
       --skip-firewalld \
       --mon-ip $IP \
+
+# let's add some osds
+if [ "$ALL_AVAILABLE_DEVICES" -eq 1 ]; then
+    $SUDO $CEPHADM orch apply osd --all-available-devices
+else
+    build_osds_from_list
+fi
+
