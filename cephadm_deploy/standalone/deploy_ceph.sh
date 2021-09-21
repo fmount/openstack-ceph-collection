@@ -9,7 +9,7 @@ KEYRING="/etc/ceph/ceph.client.admin.keyring"
 CEPH_PUB_KEY="/etc/ceph/ceph.pub"
 
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-IMAGE_PACIFIC=${IMAGE_PACIFIC:-'quay.ceph.io/ceph-ci/ceph:pacific'}
+IMAGE_PACIFIC=${IMAGE_PACIFIC:-'quay.io/ceph/ceph:v16.2.6'}
 IP=192.168.121.205
 
 [ -z "$SUDO" ] && SUDO=sudo
@@ -35,6 +35,10 @@ install_cephadm() {
     echo "[INSTALL CEPHADM] cephadm is ready"
 }
 
+rm_cluster() {
+  $SUDO "$CEPHADM" rm-cluster --fsid "$FSID" --force
+  echo "[CEPHDM] Cluster deleted"
+}
 
 install_cephadm
 
@@ -48,7 +52,8 @@ cat <<EOF > $ORIG_CONFIG
   osd crush chooseleaf type = 0
 EOF
 
-$SUDO $CEPHADM bootstrap \
+$SUDO $CEPHADM --image $IMAGE_PACIFIC \
+      bootstrap \
       --fsid $FSID \
       --config $ORIG_CONFIG \
       --output-config $CONFIG \
@@ -58,4 +63,5 @@ $SUDO $CEPHADM bootstrap \
       --allow-fqdn-hostname \
       --skip-monitoring-stack \
       --skip-dashboard \
+      --skip-firewalld \
       --mon-ip $IP \
