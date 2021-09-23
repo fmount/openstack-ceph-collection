@@ -10,8 +10,15 @@ CEPH_PUB_KEY="/etc/ceph/ceph.pub"
 ALL_AVAILABLE_DEVICES=0
 DEVICES_LIST=("/dev/ceph_vg/ceph_lv_data")
 SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
-FSNAME=${FSNAME:-'cephfs'}
 MIN_OSDS=1
+
+# NFS OPTIONS
+FSNAME=${FSNAME:-'cephfs'}
+NFS_INGRESS=1
+NFS_INGRESS_FPORT=20049
+NFS_INGRESS_MPORT=9000
+INGRESS_SPEC="ingress.yml"
+
 
 # RGW OPTIONS
 RGW_PORT=8080
@@ -61,7 +68,7 @@ rgw() {
   # TODO: Add more logic here and process parameters
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph orch apply rgw default \
-      --port "$RGW_PORT"
+      '--placement=$HOSTNAME count:1' --port "$RGW_PORT"
 }
 
 mds() {
@@ -78,10 +85,17 @@ mds() {
 }
 
 nfs() {
-  # TODO: Add more logic here
+  echo "[CEPHADM] Deploy nfs.$FSNAME backend"
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph orch apply nfs \
       "$FSNAME" --placement="$HOSTNAME"
+
+  if [ "$NFS_INGRESS" -eq 1 ]; then
+    echo "[CEPHADM] Deploy nfs.$FSNAME Ingress Service"
+    $SUDO "$CEPHADM" shell -m /tmp/"$INGRESS_SPEC" --fsid $FSID \
+        --config $CONFIG --keyring $KEYRING -- ceph orch apply -i \
+        /mnt/"$INGRESS_SPEC"
+fi
 }
 
 process_services() {
@@ -162,6 +176,20 @@ echo "[CEPHADM] OSD(s) deployed: $num_osds"
 
 # additional pools ?
 # additional keys ?
+
+if [ "$NFS_INGRESS" -eq 1 ]; then
+cat > /tmp/$INGRESS_SPEC <<-EOF
+service_type: ingress
+service_id: nfs.$FSNAME
+placement:
+  count: 1
+spec:
+  backend_service: nfs.$FSNAME
+  frontend_port: $NFS_INGRESS_FPORT
+  monitor_port: $NFS_INGRESS_MPORT
+  virtual_ip: $IP/24" > /tmp/"$INGRESS_SPEC"
+EOF
+fi
 
 # add more services
 process_services
