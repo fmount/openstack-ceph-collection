@@ -10,6 +10,7 @@ CEPH_PUB_KEY="/etc/ceph/ceph.pub"
 ALL_AVAILABLE_DEVICES=0
 DEVICES_LIST=("/dev/ceph_vg/ceph_lv_data")
 SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
+SLEEP=5
 MIN_OSDS=1
 
 # NFS OPTIONS
@@ -20,7 +21,9 @@ NFS_INGRESS_MPORT=9000
 INGRESS_SPEC="ingress.yml"
 
 # POOLS
-POOLS=()
+declare -A POOLS
+# POOLS[test]='rbd'
+
 DEFAULT_PG_NUM=8
 DEFAULT_PGP_NUM=8
 
@@ -121,15 +124,21 @@ process_services() {
   done
 }
 
+# pools are tied to their application, therefore the function
+# iterates over the associative array that defines this relationship
+# e.g. { 'volumes': 'rbd', 'manila_data': 'cephfs' }
 create_pools() {
-  for pool in "${POOLS[@]}"; do
+
+  [ "${#POOLS[@]}" -eq 0 ] && return;
+
+  for pool in "${!POOLS[*]}"; do
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph osd pool create "$pool" $DEFAULT_PG_NUM \
       $DEFAULT_PGP_NUM replicated --autoscale-mode on
 
   # set the application to the pool (which also means rbd init the pool)
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-      --keyring $KEYRING -- ceph osd pool application enable "$pool" rbd
+      --keyring $KEYRING -- ceph osd pool application enable "$pool" ${POOLS[$pool]}
   done
 }
 
@@ -171,7 +180,11 @@ $SUDO $CEPHADM --image "$IMAGE_PACIFIC" \
       --skip-dashboard \
       --skip-firewalld \
       --mon-ip $IP
+
+# Wait cephadm backend to be operational
+sleep "$SLEEP"
 fi
+
 
 # let's add some osds
 if [ "$ALL_AVAILABLE_DEVICES" -eq 1 ]; then
