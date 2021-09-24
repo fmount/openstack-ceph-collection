@@ -143,6 +143,26 @@ create_pools() {
   done
 }
 
+build_caps() {
+  basic="mon 'allow r' osd 'allow class-read object_prefix rbd_children,"
+  local CAPS=""
+  for pool in "${!POOLS[@]}"; do
+    caps="allow rwx pool="$pool
+    CAPS+=$caps,
+  done
+  echo "${CAPS::-1}"
+}
+
+create_keys() {
+  local name=$1
+  local caps
+  caps=$(build_caps)
+
+  $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+      --keyring $KEYRING -- ceph auth add "$name" mon "allow r" osd \
+      "allow class-read object_prefix rbd_children, $caps"
+}
+
 check_cluster_status() {
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph -s -f json-pretty
@@ -223,7 +243,7 @@ fi
 
 # add the provided pools
 create_pools
-# TODO: additional keys ?
+create_keys "client.***REMOVED***"
 
 # add more services
 process_services
