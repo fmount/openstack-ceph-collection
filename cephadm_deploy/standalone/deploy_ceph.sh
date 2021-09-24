@@ -144,7 +144,6 @@ create_pools() {
 }
 
 build_caps() {
-  basic="mon 'allow r' osd 'allow class-read object_prefix rbd_children,"
   local CAPS=""
   for pool in "${!POOLS[@]}"; do
     caps="allow rwx pool="$pool
@@ -154,13 +153,27 @@ build_caps() {
 }
 
 create_keys() {
+
   local name=$1
   local caps
-  caps=$(build_caps)
+  local osd_caps
+
+  if [ "${#POOLS[@]}" -eq 0 ]; then
+      osd_caps="allow *"
+  else
+      caps=$(build_caps)
+      osd_caps="allow class-read object_prefix rbd_children, $caps"
+  fi
+
+  current_key=$(sudo cephadm shell ceph auth ls | grep client.***REMOVED***)
+  if [ -n "$current_key" ]; then
+      # the key exists, we just need to update it
+      $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+          --keyring $KEYRING -- ceph auth rm "$name"
+  fi
 
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-      --keyring $KEYRING -- ceph auth add "$name" mon "allow r" osd \
-      "allow class-read object_prefix rbd_children, $caps"
+      --keyring $KEYRING -- ceph auth add "$name" mon "allow r" osd "$osd_caps"
 }
 
 check_cluster_status() {
