@@ -19,6 +19,11 @@ NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
 INGRESS_SPEC="ingress.yml"
 
+# POOLS
+POOLS=()
+DEFAULT_PG_NUM=8
+DEFAULT_PGP_NUM=8
+
 
 # RGW OPTIONS
 RGW_PORT=8080
@@ -32,7 +37,6 @@ IP=192.168.121.205
 # TODO:
 #   - feature1 -> add pv/vg/lv for loopback
 #   - install cephadm from centos storage sig
-#   - finalize the cluster adding more services
 
 
 ceph_repo() {
@@ -117,8 +121,20 @@ process_services() {
   done
 }
 
+create_pools() {
+  for pool in "${POOLS[@]}"; do
+  $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+      --keyring $KEYRING -- ceph osd pool create "$pool" $DEFAULT_PG_NUM \
+      $DEFAULT_PGP_NUM replicated --autoscale-mode on
+
+  # set the application to the pool (which also means rbd init the pool)
+  $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+      --keyring $KEYRING -- ceph osd pool application enable "$pool" rbd
+  done
+}
+
 check_cluster_status() {
-  $SUDO $CEPHADM shell --fsid $FSID --config $CONFIG \
+  $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph -s -f json-pretty
 }
 
@@ -174,8 +190,8 @@ for f in `seq 1 30`; do
 done
 echo "[CEPHADM] OSD(s) deployed: $num_osds"
 
-# additional pools ?
-# additional keys ?
+[ "$num_osds" -lt "$MIN_OSDS" ] && exit 255
+
 
 if [ "$NFS_INGRESS" -eq 1 ]; then
 cat > /tmp/$INGRESS_SPEC <<-EOF
@@ -190,6 +206,10 @@ spec:
   virtual_ip: $IP/24" > /tmp/"$INGRESS_SPEC"
 EOF
 fi
+
+# add the provided pools
+create_pools
+# TODO: additional keys ?
 
 # add more services
 process_services
