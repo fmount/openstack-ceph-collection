@@ -73,7 +73,7 @@ function rgw() {
     # TODO: Add more logic here and process parameters
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply rgw default \
-        \'--placement="$HOSTNAME" count:1\' --port "$RGW_PORT"
+        '--placement="$HOSTNAME" count:1' --port "$RGW_PORT"
 }
 
 function mds() {
