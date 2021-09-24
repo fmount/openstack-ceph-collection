@@ -23,9 +23,10 @@ INGRESS_SPEC="ingress.yml"
 # POOLS
 declare -A POOLS
 # POOLS[test]='rbd'
-
 DEFAULT_PG_NUM=8
 DEFAULT_PGP_NUM=8
+
+# KEYS
 
 
 # RGW OPTIONS
@@ -131,7 +132,7 @@ create_pools() {
 
   [ "${#POOLS[@]}" -eq 0 ] && return;
 
-  for pool in "${!POOLS[*]}"; do
+  for pool in "${!POOLS[@]}"; do
   $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
       --keyring $KEYRING -- ceph osd pool create "$pool" $DEFAULT_PG_NUM \
       $DEFAULT_PGP_NUM replicated --autoscale-mode on
