@@ -180,11 +180,41 @@ function check_cluster_status() {
 
 # TODO: Build this function
 function usage() {
-    # ./test2.sh -c quay.ceph.io/ceph/daemon:v6.0.4 -i 192.168.121.52 \
-    # -p volumes -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data
-    echo "USAGE"
-    echo "-----"
-    echo "./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data"
+    # Display Help
+    # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
+    #    -p volumes:rbd -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data
+    echo "Deploy a standalone Ceph cluster."
+    echo
+    echo "Syntax: $0 [-i <ip>][-p <pool><application>][-s <service>][-d </dev/device/path>]" 1>&2;
+    echo "Options:"
+    echo "d     Device path that is used to build OSD(s)."
+    echo "i     IP address where the mon(s)/mgr(s) daemons are deployed."
+    echo "p     Pool list that are created (this option can be passed in the form pool:application)"
+    echo "s     Services/Daemons that are added to the cluster."
+    echo
+    echo "Examples"
+    echo
+    echo "1. Deploy a minimal Ceph cluster using the specified IP"
+    echo "> $0 -i 192.168.121.205"
+    echo
+    echo "2. Build the OSD(s) according to the specified paths"
+    echo "> $0 -i IP -d /dev/ceph_vg/ceph_lv_data -d /dev/ceph_vg/ceph_lv_data1"
+    echo
+    echo "3. Deploy the Ceph cluster and add the specified pools"
+    echo "> $0 -i IP -p volumes -p images:rbd"
+    echo
+    echo "4. Deploy the Ceph cluster and add the specified services"
+    echo
+    echo "> $0 -i IP -s rgw -s mds -s nfs"
+    echo
+    echo "5. Deploy the Ceph cluster using the given image:tag"
+    echo "> $0 -i IP -c image:tag"
+    # echo "./test.sh -t  # Tear Down the Ceph cluster"
+    echo
+    echo "A real use case Example"
+    echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
+
+
 }
 
 # TODO: Make it generic
