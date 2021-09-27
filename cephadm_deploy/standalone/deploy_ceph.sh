@@ -178,7 +178,6 @@ function check_cluster_status() {
         --keyring $KEYRING -- ceph -s -f json-pretty
 }
 
-# TODO: Build this function
 function usage() {
     # Display Help
     # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
@@ -188,6 +187,7 @@ function usage() {
     echo "Syntax: $0 [-i <ip>][-p <pool><application>][-s <service>][-d </dev/device/path>]" 1>&2;
     echo "Options:"
     echo "d     Device path that is used to build OSD(s)."
+    echo "h     Print this menu."
     echo "i     IP address where the mon(s)/mgr(s) daemons are deployed."
     echo "p     Pool list that are created (this option can be passed in the form pool:application)"
     echo "s     Services/Daemons that are added to the cluster."
@@ -213,8 +213,6 @@ function usage() {
     echo
     echo "A real use case Example"
     echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
-
-
 }
 
 # TODO: Make it generic
