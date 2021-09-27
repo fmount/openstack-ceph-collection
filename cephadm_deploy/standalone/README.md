@@ -30,20 +30,21 @@ s     Services/Daemons that are added to the cluster.
 Examples
 
 1. Deploy a minimal Ceph cluster using the specified IP"
-> ./deploy_ceph.sh -i 192.168.121.205
+> ./deploy_ceph.sh -i \<IP\>
 
 2. Build the OSD(s) according to the specified paths
-> ./deploy_ceph.sh -i IP -d /dev/ceph_vg/ceph_lv_data -d /dev/ceph_vg/ceph_lv_data1
+> ./deploy_ceph.sh -i \<IP\> -d /dev/ceph_vg/ceph_lv_data -d /dev/ceph_vg/ceph_lv_data1
 
 3. Deploy the Ceph cluster and add the specified pools
-> ./deploy_ceph.sh -i IP -p volumes -p images:rbd
+> ./deploy_ceph.sh -i \<IP\> -p volumes -p images:rbd
 
 4. Deploy the Ceph cluster and add the specified services
 
-> ./deploy_ceph.sh -i IP -s rgw -s mds -s nfs
+> ./deploy_ceph.sh -i \<IP\> -s rgw -s mds -s nfs
 
 5. Deploy the Ceph cluster using the given image:tag
-> ./deploy_ceph.sh -i IP -c image:tag
+> ./deploy_ceph.sh -i \<IP\> -c image:tag
 
-** A real use case Example **:
+**A real use case Example**:
+
 ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb
