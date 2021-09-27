@@ -47,4 +47,4 @@ Examples
 
 **A real use case Example**:
 
-./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb
+> ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb
