@@ -1,5 +1,6 @@
 #!/bin/env bash
 
+# GENERIC CEPHADM INTERNAL OPTIONS, DO NOT EDIT
 TARGET_BIN=/usr/bin
 ORIG_CONFIG="$HOME/bootstrap_ceph.conf"
 CONFIG="/etc/ceph/ceph.conf"
@@ -8,11 +9,12 @@ CEPH_PUB_KEY="/etc/ceph/ceph.pub"
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-IMAGE_PACIFIC=${IMAGE_PACIFIC:-'quay.io/ceph/ceph:v16.2.6'}
-IP=192.168.121.205
-ALL_AVAILABLE_DEVICES=0
-DEVICES_LIST=("/dev/ceph_vg/ceph_lv_data")
-SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v16.2.6'}
+IP=${IP:-'127.0.0.1'}
+DEVICES=()
+SERVICES=()
+# DEVICES=("/dev/ceph_vg/ceph_lv_data")
+# SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
 SLEEP=5
 ATTEMPTS=30
 MIN_OSDS=1
@@ -48,7 +50,6 @@ function ceph_repo() {
     enabled=1" > /etc/yum.repos.d/pacific.repo
 }
 
-
 function install_cephadm() {
     curl -O https://raw.githubusercontent.com/ceph/ceph/pacific/src/cephadm/cephadm
     $SUDO mv cephadm $TARGET_BIN
@@ -62,7 +63,7 @@ function rm_cluster() {
 }
 
 function build_osds_from_list() {
-    for item in "${DEVICES_LIST[@]}"; do
+    for item in "${DEVICES[@]}"; do
         echo "Creating osd $item on node $HOSTNAME"
         $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
             --keyring $KEYRING -- ceph orch daemon add osd "$HOSTNAME:$item"
@@ -105,15 +106,15 @@ function nfs() {
 function process_services() {
     for item in "${SERVICES[@]}"; do
         case "$item" in
-          "MDS")
+          mds|MDS)
           echo "Deploying MDS on node $HOSTNAME"
           mds
           ;;
-          "NFS")
+          nfs|NFS)
           echo "Deploying NFS on node $HOSTNAME"
           nfs
-            ;;
-          "RGW")
+          ;;
+          rgw|RGW)
           echo "Deploying RGW on node $HOSTNAME"
           rgw
           ;;
@@ -177,6 +178,68 @@ function check_cluster_status() {
         --keyring $KEYRING -- ceph -s -f json-pretty
 }
 
+# TODO: Build this function
+function usage() {
+    # ./test2.sh -c quay.ceph.io/ceph/daemon:v6.0.4 -i 192.168.121.52 \
+    # -p volumes -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data
+    echo "USAGE"
+    echo "-----"
+    echo "./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data"
+}
+
+# TODO: Make it generic
+function preview() {
+    echo "---------"
+    echo "SERVICES"
+    for daemon in "${SERVICES[@]}"; do
+        echo "* $daemon"
+    done
+
+    echo "---------"
+    echo "POOLS"
+    for key in "${!POOLS[@]}"; do
+        echo "$key:${POOLS[$key]}";
+    done
+
+    echo "---------"
+    echo "DEVICES"
+    for dev in "${DEVICES[@]}"; do
+        echo "* $dev"
+    done
+    [ -z "$DEVICES" ] && echo "Using ALL available devices"
+
+    echo "---------"
+    echo IP: "$IP"
+    echo "---------"
+    echo "Container Image: $CONTAINER_IMAGE"
+    echo "---------"
+}
+
+if [[ ${#} -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+## Process input parameters
+while getopts "c:s:i:p:d:" opt; do
+    case $opt in
+        c) CONTAINER_IMAGE="$OPTARG";;
+        d) DEVICES+=("$OPTARG");;
+        i) IP="$OPTARG";;
+        p) curr_pool=(${OPTARG//:/ })
+           [ -z "${curr_pool[1]}" ] && curr_pool[1]=rbd
+           # POOLS input is provided in the form { POOL:APPLICATION }.
+           # An associative array is built starting from this input.
+           POOLS[${curr_pool[0]}]=${curr_pool[1]}
+           ;;
+        s) SERVICES+=("$OPTARG");;
+        *) usage
+        #...
+    esac
+done
+shift $((OPTIND -1))
+
+preview
 install_cephadm
 
 if [ -z "$CEPHADM" ]; then
@@ -197,7 +260,7 @@ EOF
 
 cluster=$(sudo cephadm ls | jq '.[]' | jq 'select(.name | test("^mon*")).fsid')
 if [ -z "$cluster" ]; then
-$SUDO $CEPHADM --image "$IMAGE_PACIFIC" \
+$SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
       bootstrap \
       --fsid $FSID \
       --config "$ORIG_CONFIG" \
@@ -217,7 +280,8 @@ fi
 
 
 # let's add some osds
-if [ "$ALL_AVAILABLE_DEVICES" -eq 1 ]; then
+if [ -z "$DEVICES" ]; then
+    echo "Using ALL available devices"
     $SUDO $CEPHADM shell ceph orch apply osd --all-available-devices
 else
     build_osds_from_list
