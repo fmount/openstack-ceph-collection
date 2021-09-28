@@ -187,9 +187,8 @@ function cephadm_debug() {
         echo "[CEPHADM] Enabling Debug mode"
         $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
             --keyring $KEYRING -- ceph config set mgr mgr/cephadm/log_to_cluster_level debug
+        echo "[CEPHADM] See debug logs running: ceph -W cephadm --watch-debug"
     fi
-    echo "[CEPHADM] See debug logs running: ceph -W cephadm --watch-debug"
-
 }
 
 function check_cluster_status() {
