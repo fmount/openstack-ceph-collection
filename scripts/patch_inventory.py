@@ -55,10 +55,6 @@ if __name__ == "__main__":
     else:
         output = OPTS.output_file
 
-
-    print("INVENTORY %s" % OPTS.inventory)
-    print("GROUP TO REMOVE %s" % OPTS.host_group)
-
     patched_inventory = rm_group(OPTS.host_group, OPTS.inventory)
     with open(output, 'w') as f:
         f.write(patched_inventory)
