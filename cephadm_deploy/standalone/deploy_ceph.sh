@@ -6,6 +6,7 @@ ORIG_CONFIG="$HOME/bootstrap_ceph.conf"
 CONFIG="/etc/ceph/ceph.conf"
 KEYRING="/etc/ceph/ceph.client.admin.keyring"
 CEPH_PUB_KEY="/etc/ceph/ceph.pub"
+EXPORT="$HOME/ceph_export.yml"
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
@@ -18,10 +19,11 @@ SERVICES=()
 SLEEP=5
 ATTEMPTS=30
 MIN_OSDS=1
-
+DEBUG=0
 # NFS OPTIONS
 FSNAME=${FSNAME:-'cephfs'}
-NFS_INGRESS=1
+NFS_INGRESS=0
+NFS_PORT=12345
 NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
 INGRESS_SPEC="ingress.yml"
@@ -58,8 +60,15 @@ function install_cephadm() {
 }
 
 function rm_cluster() {
-    $SUDO "$CEPHADM" rm-cluster --zap-osds --fsid "$FSID" --force
-    echo "[CEPHDM] Cluster deleted"
+    if ! [ -x "$CEPHADM" ]; then
+        install_cephadm
+        CEPHADM=${TARGET_BIN}/cephadm
+    fi
+    cluster=$(sudo cephadm ls | jq '.[]' | jq 'select(.name | test("^mon*")).fsid')
+    if [ -n "$cluster" ]; then
+        sudo cephadm rm-cluster --zap-osds --fsid "$FSID" --force
+        echo "[CEPHADM] Cluster deleted"
+    fi
 }
 
 function build_osds_from_list() {
@@ -93,7 +102,7 @@ function nfs() {
     echo "[CEPHADM] Deploy nfs.$FSNAME backend"
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply nfs \
-        "$FSNAME" --placement="$HOSTNAME"
+        "$FSNAME" --placement="$HOSTNAME" --port $NFS_PORT
 
     if [ "$NFS_INGRESS" -eq 1 ]; then
       echo "[CEPHADM] Deploy nfs.$FSNAME Ingress Service"
@@ -173,9 +182,25 @@ function create_keys() {
         --keyring $KEYRING -- ceph auth add "$name" mon "allow r" osd "$osd_caps"
 }
 
+function cephadm_debug() {
+    if [ "$DEBUG" -eq 1 ]; then
+        echo "[CEPHADM] Enabling Debug mode"
+        $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+            --keyring $KEYRING -- ceph config set mgr mgr/cephadm/log_to_cluster_level debug
+    fi
+    echo "[CEPHADM] See debug logs running: ceph -W cephadm --watch-debug"
+
+}
+
 function check_cluster_status() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph -s -f json-pretty
+}
+
+function export_spec() {
+    $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+        --keyring $KEYRING -- ceph orch ls --export > "$EXPORT"
+    echo "Ceph cluster config exported: $EXPORT"
 }
 
 function usage() {
@@ -191,6 +216,7 @@ function usage() {
     echo "i     IP address where the mon(s)/mgr(s) daemons are deployed."
     echo "p     Pool list that are created (this option can be passed in the form pool:application)"
     echo "s     Services/Daemons that are added to the cluster."
+    echo "t     Tear down the Ceph cluster."
     echo
     echo "Examples"
     echo
@@ -209,7 +235,9 @@ function usage() {
     echo
     echo "5. Deploy the Ceph cluster using the given image:tag"
     echo "> $0 -i IP -c image:tag"
-    # echo "./test.sh -t  # Tear Down the Ceph cluster"
+    echo
+    echo "6. Tear Down the Ceph cluster"
+    echo "> $0 -t"
     echo
     echo "A real use case Example"
     echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
@@ -249,7 +277,7 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 ## Process input parameters
-while getopts "c:s:i:p:d:" opt; do
+while getopts "c:s:i:p:d:t" opt; do
     case $opt in
         c) CONTAINER_IMAGE="$OPTARG";;
         d) DEVICES+=("$OPTARG");;
@@ -261,8 +289,10 @@ while getopts "c:s:i:p:d:" opt; do
            POOLS[${curr_pool[0]}]=${curr_pool[1]}
            ;;
         s) SERVICES+=("$OPTARG");;
+        t) rm_cluster
+           exit 0
+           ;;
         *) usage
-        #...
     esac
 done
 shift $((OPTIND -1))
@@ -306,7 +336,7 @@ $SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
 sleep "$SLEEP"
 fi
 
-
+cephadm_debug
 # let's add some osds
 if [ -z "$DEVICES" ]; then
     echo "Using ALL available devices"
@@ -349,3 +379,4 @@ create_keys "client.***REMOVED***"
 # add more services
 process_services
 check_cluster_status
+export_spec
