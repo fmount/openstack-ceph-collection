@@ -202,6 +202,27 @@ function export_spec() {
     echo "Ceph cluster config exported: $EXPORT"
 }
 
+function dump_log() {
+    local daemon="$1"
+    local num_lines=100
+
+    echo "-------------------------"
+    echo "dump daemon log: $daemon"
+    echo "-------------------------"
+
+    $SUDO $CEPHADM logs --fsid $FSID --name "$daemon" -- --no-pager -n $num_lines
+}
+
+function dump_all_logs() {
+    local daemons
+    daemons=$($SUDO $CEPHADM ls | jq -r '.[] | select(.fsid == "'$FSID'").name')
+
+    echo "Dumping logs for daemons: $daemons"
+    for d in $daemons; do
+        dump_log "$d"
+    done
+}
+
 function usage() {
     # Display Help
     # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
