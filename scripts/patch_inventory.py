@@ -47,12 +47,23 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     if OPTS.host_group is None or len(OPTS.host_group) == 0:
-        print('Error, no group to be removed')
+        print('Error, no group to removed')
         sys.exit(-1)
+
+    if OPTS.output_file is None or len(OPTS.output_file) == 0:
+        output = OPTS.inventory
+    else:
+        output = OPTS.output_file
+
 
     print("INVENTORY %s" % OPTS.inventory)
     print("GROUP TO REMOVE %s" % OPTS.host_group)
 
     patched_inventory = rm_group(OPTS.host_group, OPTS.inventory)
-    with open(OPTS.inventory, 'w') as f:
+    with open(output, 'w') as f:
         f.write(patched_inventory)
+
+# Example
+
+# 1. python3 patch_inventory.py -i tripleo-ansible-inventory.yaml -g nfss
+# 2. python3 patch_inventory.py -i tripleo-ansible-inventory.yaml -g nfss -o patched_tripleo_inventory.yaml
