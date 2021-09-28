@@ -14,6 +14,7 @@ CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v16.2.6'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
+KEYS=("client.***REMOVED***") # at least the client.***REMOVED*** default key should be created
 # DEVICES=("/dev/ceph_vg/ceph_lv_data")
 # SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
 SLEEP=5
@@ -173,7 +174,7 @@ function create_keys() {
 
     current_key=$(sudo cephadm shell ceph auth ls | grep client.***REMOVED***)
     if [ -n "$current_key" ]; then
-        # the key exists, we just need to update it
+        # the key exists, we just need to update it (rm + create)
         $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
             --keyring $KEYRING -- ceph auth rm "$name"
     fi
@@ -249,14 +250,17 @@ function usage() {
     echo "3. Deploy the Ceph cluster and add the specified pools"
     echo "> $0 -i IP -p volumes -p images:rbd"
     echo
-    echo "4. Deploy the Ceph cluster and add the specified services"
+    echo "4. Deploy the Ceph cluster and add the specified keys"
+    echo "> $0 -i IP -k client.***REMOVED*** -k client.manila -k client.glance"
+    echo
+    echo "5. Deploy the Ceph cluster and add the specified services"
     echo
     echo "> $0 -i IP -s rgw -s mds -s nfs"
     echo
-    echo "5. Deploy the Ceph cluster using the given image:tag"
+    echo "6. Deploy the Ceph cluster using the given image:tag"
     echo "> $0 -i IP -c image:tag"
     echo
-    echo "6. Tear Down the Ceph cluster"
+    echo "7. Tear Down the Ceph cluster"
     echo "> $0 -t"
     echo
     echo "A real use case Example"
@@ -297,10 +301,11 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 ## Process input parameters
-while getopts "c:s:i:p:d:t" opt; do
+while getopts "c:s:i:p:d:k:t" opt; do
     case $opt in
         c) CONTAINER_IMAGE="$OPTARG";;
         d) DEVICES+=("$OPTARG");;
+        k) KEYS+=("$OPTARG");;
         i) IP="$OPTARG";;
         p) curr_pool=(${OPTARG//:/ })
            [ -z "${curr_pool[1]}" ] && curr_pool[1]=rbd
@@ -394,7 +399,9 @@ fi
 
 # add the provided pools
 create_pools
-create_keys "client.***REMOVED***"
+for key_name in "${KEYS[@]}"; do
+    create_keys "$key_name"
+done
 
 # add more services
 process_services
