@@ -23,8 +23,10 @@ Syntax: ./deploy_ceph.sh [-i <ip>][-p <pool><application>][-s <service>][-d </de
 Options:
 d     Device path that is used to build OSD(s).
 i     IP address where the mon(s)/mgr(s) daemons are deployed.
-p     Pool list that are created (this option can be passed in the form pool:application)
+p     Pool that is created (this option can be passed in the form pool:application multiple times)
+k     Key that is created (this option can be passed multiple times)
 s     Services/Daemons that are added to the cluster.
+t     Tear down the previously deployed Ceph cluster.
 ~~~
 
 Examples
@@ -38,13 +40,18 @@ Examples
 3. Deploy the Ceph cluster and add the specified pools
 > ./deploy_ceph.sh -i \<IP\> -p volumes -p images:rbd
 
-4. Deploy the Ceph cluster and add the specified services
+4. Deploy the Ceph cluster and add the specified keys
+> ./deploy_ceph.sh -i \<IP\> -k client.***REMOVED*** -k client.manila -k client.glance
 
+5. Deploy the Ceph cluster and add the specified services
 > ./deploy_ceph.sh -i \<IP\> -s rgw -s mds -s nfs
 
-5. Deploy the Ceph cluster using the given image:tag
-> ./deploy_ceph.sh -i \<IP\> -c image:tag
+6. Deploy the Ceph cluster using the given image:tag
+> ./deploy_ceph.sh -i \<IP\> -c image:tag"
+
+7. Tear Down the Ceph cluster
+> ./deploy_ceph.sh -t
 
 **A real use case Example**:
 
-> ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb
+> ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -p images -k client.***REMOVED*** -k client.glance -k client.manila -s rgw -s nfs -s mds -d /dev/vdb
