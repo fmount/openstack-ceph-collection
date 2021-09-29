@@ -109,7 +109,6 @@ def run_module():
     module = AnsibleModule(
         argument_spec=yaml.safe_load(DOCUMENTATION)['options'],
         supports_check_mode=True,
-        # required_if=[['apply', True, ['render_path']]],
     )
 
     # Gather module parameters in variables
@@ -142,7 +141,7 @@ def run_module():
     write_inventory(out_inventory, patched_inventory)
     result['message'] ="The inventory is patched and the group {} is removed".format(group)
 
-    module.exit_json(changed=True, result="Inventory patched")
+    module.exit_json(**result)
 
 def main():
     run_module()
