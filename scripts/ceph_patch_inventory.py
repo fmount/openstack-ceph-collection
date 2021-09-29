@@ -54,6 +54,11 @@ options:
           - The output inventory file (only needed to avoid the input file being replaced)
         required: false
         type: str
+    backup:
+        description:
+          - Backup the original inventory file
+        required: false
+        type: bool
 """
 
 EXAMPLES = '''
@@ -61,15 +66,15 @@ EXAMPLES = '''
   ceph_patch_inventory:
     group: "{{ item }}"
     inventory: "{{ playbook_dir }}/ceph-ansible/inventory.yml"
+    backup: true
   with_items:
     - nfss
     - ceph_nfs
 
 - name: Patch the existing inventory file removing the NFS group
   ceph_patch_inventory:
-    groups: nfss
+    groups: mdss
     inventory: "{{ playbook_dir }}/tripleo-ansible-inventory.yaml"
-    output_inventory: "{{ playbook_dir }}/ceph-ansible/inventory.yml"
 '''
 
 RETURN = '''#  '''
@@ -84,9 +89,13 @@ def repr_str(dumper, data):
 yaml.SafeDumper.org_represent_str = yaml.SafeDumper.represent_str
 yaml.add_representer(str, repr_str, Dumper=yaml.SafeDumper)
 
-def rm_group(group, inventory_path):
+def rm_group(group, inventory_path, backup=False):
     with open(inventory_path, 'r') as file:
         inventory = yaml.load(file, yaml.SafeLoader)
+
+    if backup:
+        with open("{}.bkp".format(inventory_path), 'w') as f:
+            f.write(yaml.safe_dump(inventory, indent=2))
 
     # patch the yaml inventory: remove the group if exists
     inventory.pop(group, None)
@@ -94,9 +103,11 @@ def rm_group(group, inventory_path):
     # return the patched inventory
     return yaml.safe_dump(inventory, indent=2)
 
-def write_inventory(output_inventory_path, patched_inventory):
+def write_inventory(output_inventory_path, group, patched_inventory):
     with open(output_inventory_path, 'w') as f:
         f.write(patched_inventory)
+
+    return "The inventory is patched and the group {} is removed".format(group)
 
 def run_module():
 
@@ -115,6 +126,7 @@ def run_module():
     group = module.params.get('group')
     inventory = module.params.get('inventory')
     out_inventory = module.params.get('output_inventory')
+    backup = module.params.get('backup')
 
     if module.check_mode:
         module.exit_json(
@@ -129,17 +141,21 @@ def run_module():
 
     # PROCESSING PARAMETERS
     if inventory is None or not os.path.exists(inventory):
-        result['message'] ="ERROR, no valid inventory provided"
+        result['message'] = "ERROR, no valid inventory provided"
 
     # if no output inventory file is explicitly passed
     # the module replace the existing input inventory
     if out_inventory is None:
         out_inventory = inventory
 
+    if backup is None:
+        backup = False
 
-    patched_inventory = rm_group(group, inventory)
-    write_inventory(out_inventory, patched_inventory)
-    result['message'] ="The inventory is patched and the group {} is removed".format(group)
+    # patch the inventory file and backup if True
+    patched_inventory = rm_group(group, inventory, backup)
+    # dump the new generated inventory file into the output file
+    mgs = write_inventory(out_inventory, group, patched_inventory)
+    result['message'] = mgs
 
     module.exit_json(**result)
 
