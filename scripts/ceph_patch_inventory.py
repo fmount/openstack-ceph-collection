@@ -59,12 +59,15 @@ options:
 EXAMPLES = '''
 - name: Patch the existing inventory file removing the NFS group
   ceph_patch_inventory:
-    group: nfss
+    group: "{{ item }}"
     inventory: "{{ playbook_dir }}/ceph-ansible/inventory.yml"
+  with_items:
+    - nfss
+    - ceph_nfs
 
 - name: Patch the existing inventory file removing the NFS group
   ceph_patch_inventory:
-    group: ceph_nfs
+    groups: nfss
     inventory: "{{ playbook_dir }}/tripleo-ansible-inventory.yaml"
     output_inventory: "{{ playbook_dir }}/ceph-ansible/inventory.yml"
 '''
@@ -85,8 +88,8 @@ def rm_group(group, inventory_path):
     with open(inventory_path, 'r') as file:
         inventory = yaml.load(file, yaml.SafeLoader)
 
-        # patch the yaml inventory: remove the group if exists
-        inventory.pop(group, None)
+    # patch the yaml inventory: remove the group if exists
+    inventory.pop(group, None)
 
     # return the patched inventory
     return yaml.safe_dump(inventory, indent=2)
@@ -96,6 +99,12 @@ def write_inventory(output_inventory_path, patched_inventory):
         f.write(patched_inventory)
 
 def run_module():
+
+    result = dict(
+        changed=False,
+        valid_input=True,
+        message=''
+    )
 
     module = AnsibleModule(
         argument_spec=yaml.safe_load(DOCUMENTATION)['options'],
@@ -121,7 +130,7 @@ def run_module():
 
     # PROCESSING PARAMETERS
     if inventory is None or not os.path.exists(inventory):
-        module.exit_json(changed=True, result="ERROR, no valid inventory provided")
+        result['message'] ="ERROR, no valid inventory provided"
 
     # if no output inventory file is explicitly passed
     # the module replace the existing input inventory
@@ -131,6 +140,7 @@ def run_module():
 
     patched_inventory = rm_group(group, inventory)
     write_inventory(out_inventory, patched_inventory)
+    result['message'] ="The inventory is patched and the group {} is removed".format(group)
 
     module.exit_json(changed=True, result="Inventory patched")
 
