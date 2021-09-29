@@ -14,14 +14,7 @@
 
 from __future__ import absolute_import, division, print_function
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.ca_common import is_containerized, \
-    exec_command, generate_ceph_cmd, exit_module
-from ansible.module_utils import ceph_spec
-import datetime
-import json
 import os
-import stat
-import time
 import yaml
 
 
