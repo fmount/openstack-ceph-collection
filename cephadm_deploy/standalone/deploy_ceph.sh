@@ -267,7 +267,6 @@ function usage() {
     echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
 }
 
-# TODO: Make it generic
 function preview() {
     echo "---------"
     echo "SERVICES"
@@ -278,7 +277,13 @@ function preview() {
     echo "---------"
     echo "POOLS"
     for key in "${!POOLS[@]}"; do
-        echo "$key:${POOLS[$key]}";
+        echo "* $key:${POOLS[$key]}";
+    done
+
+    echo "---------"
+    echo "KEYS"
+    for kname in "${KEYS[@]}"; do
+        echo "* $kname";
     done
 
     echo "---------"
@@ -289,7 +294,7 @@ function preview() {
     [ -z "$DEVICES" ] && echo "Using ALL available devices"
 
     echo "---------"
-    echo IP: "$IP"
+    echo IP Address: "$IP"
     echo "---------"
     echo "Container Image: $CONTAINER_IMAGE"
     echo "---------"
