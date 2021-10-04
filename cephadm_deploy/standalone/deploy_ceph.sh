@@ -16,6 +16,7 @@ IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
 KEYS=("client.***REMOVED***") # at least the client.***REMOVED*** default key should be created
+KEY_EXPORT_DIR="/etc/ceph"
 # DEVICES=("/dev/ceph_vg/ceph_lv_data")
 # SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
 SLEEP=5
@@ -173,15 +174,9 @@ function create_keys() {
         osd_caps="allow class-read object_prefix rbd_children, $caps"
     fi
 
-    current_key=$(sudo cephadm shell ceph auth ls | grep client.***REMOVED***)
-    if [ -n "$current_key" ]; then
-        # the key exists, we just need to update it (rm + create)
-        $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-            --keyring $KEYRING -- ceph auth rm "$name"
-    fi
-
-    $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-        --keyring $KEYRING -- ceph auth add "$name" mon "allow r" osd "$osd_caps"
+    $SUDO "$CEPHADM" shell -v "$KEY_EXPORT_DIR:$KEY_EXPORT_DIR" --fsid $FSID --config $CONFIG \
+        --keyring $KEYRING -- ceph auth get-or-create "$name" mon "allow r" osd "$osd_caps" \
+        -o "KEY_EXPORT_DIR/$name.keyring"
 }
 
 function cephadm_debug() {
@@ -417,6 +412,7 @@ fi
 # add the provided pools
 create_pools
 for key_name in "${KEYS[@]}"; do
+    echo "Processing key $key_name"
     create_keys "$key_name"
 done
 
