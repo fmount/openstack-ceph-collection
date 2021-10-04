@@ -7,6 +7,7 @@ CONFIG="/etc/ceph/ceph.conf"
 KEYRING="/etc/ceph/ceph.client.admin.keyring"
 CEPH_PUB_KEY="/etc/ceph/ceph.pub"
 EXPORT="$HOME/ceph_export.yml"
+REQUIREMENTS=("jq" "lvm" "python")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
@@ -224,6 +225,16 @@ function dump_all_logs() {
     done
 }
 
+function prereq() {
+    for cmd in "${REQUIREMENTS[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            echo "Command $cmd not found"
+            exit 1;
+        fi
+    done
+
+}
+
 function usage() {
     # Display Help
     # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
@@ -327,6 +338,7 @@ while getopts "c:s:i:p:d:k:t" opt; do
 done
 shift $((OPTIND -1))
 
+prereq
 preview
 install_cephadm
 
