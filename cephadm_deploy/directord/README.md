@@ -53,8 +53,7 @@ After the creation is completed, two additional actions should be executed:
 * Copy the inventory `directord-inventory-catalog.yaml` to the first node
 
     ```
-
-directord/.tox/venv/bin/directord bootstrap --catalog directord-inventory-catalog.yaml \
+    directord/.tox/venv/bin/directord bootstrap --catalog directord-inventory-catalog.yaml \
       --catalog directord/tools/directord-dev-bootstrap-catalog.yaml
     ```
 
