@@ -116,7 +116,7 @@ usage() {
 
 # processing options
 
-while getopts ":c:d:h" o; do
+while getopts ":c:d:h:k" o; do
     case "${o}" in
       c)
         plan=${OPTARG}
@@ -129,6 +129,11 @@ while getopts ":c:d:h" o; do
         ;;
       h)
         usage
+        ;;
+      k)
+        for ip in $($DEPLOYER list vm | grep node | awk '{print $6}'); do
+            distribute_keys "$ip"
+        done
         ;;
       *)
         usage

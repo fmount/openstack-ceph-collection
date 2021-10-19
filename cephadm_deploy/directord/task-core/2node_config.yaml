@@ -1,0 +1,17 @@
+# 2node config is specific to the 2node version of the basic example but provides the config.init
+id: 2node_config
+type: service
+version: 1.0.0
+tasks:
+  - id: init
+    action: run
+    driver: directord
+    provides:
+      - config.init
+    requires:
+      - repos.init
+      - hostname.init
+      - tripleo_packages.init
+    jobs:
+      - ADD: /home/stack/task-core-hackfest.yaml /var/tmp/directord-config.yaml
+      - CACHEFILE: /var/tmp/directord-config.yaml

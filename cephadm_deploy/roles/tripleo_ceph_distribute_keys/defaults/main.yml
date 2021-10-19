@@ -1,6 +1,0 @@
----
-tripleo_ceph_distribute_keys_config_home: /etc/ceph
-tripleo_ceph_distribute_keys_cluster: "ceph"
-tripleo_ceph_distribute_keys_keyring_prefix: "{{ tripleo_ceph_distribute_keys_config_home }}/{{ tripleo_ceph_distribute_keys_cluster }}.client"
-tripleo_ceph_distribute_keys_admin_keyring: "{{ tripleo_ceph_distribute_keys_keyring_prefix }}.admin.keyring"
-tripleo_ceph_distribute_keys_ceph_uid: 167
