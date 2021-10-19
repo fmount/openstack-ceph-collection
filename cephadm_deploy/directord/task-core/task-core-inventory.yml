@@ -1,0 +1,5 @@
+hosts:
+  node0:
+    role: controller
+  node1:
+    role: compute

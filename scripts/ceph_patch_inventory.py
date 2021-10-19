@@ -89,25 +89,16 @@ def repr_str(dumper, data):
 yaml.SafeDumper.org_represent_str = yaml.SafeDumper.represent_str
 yaml.add_representer(str, repr_str, Dumper=yaml.SafeDumper)
 
-def rm_group(group, inventory_path, backup=False):
-    with open(inventory_path, 'r') as file:
-        inventory = yaml.load(file, yaml.SafeLoader)
-
-    if backup:
-        with open("{}.bkp".format(inventory_path), 'w') as f:
-            f.write(yaml.safe_dump(inventory, indent=2))
-
+def rm_group(group, inventory):
     # patch the yaml inventory: remove the group if exists
     inventory.pop(group, None)
 
     # return the patched inventory
     return yaml.safe_dump(inventory, indent=2)
 
-def write_inventory(output_inventory_path, group, patched_inventory):
+def write_inventory(output_inventory_path, patched_inventory):
     with open(output_inventory_path, 'w') as f:
         f.write(patched_inventory)
-
-    return "The inventory is patched and the group {} is removed".format(group)
 
 def run_module():
 
@@ -124,7 +115,7 @@ def run_module():
 
     # Gather module parameters in variables
     group = module.params.get('group')
-    inventory = module.params.get('inventory')
+    inventory_path = module.params.get('inventory')
     out_inventory = module.params.get('output_inventory')
     backup = module.params.get('backup')
 
@@ -140,22 +131,33 @@ def run_module():
         )
 
     # PROCESSING PARAMETERS
-    if inventory is None or not os.path.exists(inventory):
+    if group is None:
+        group = []
+
+    if inventory_path is None or not os.path.exists(inventory_path):
         result['message'] = "ERROR, no valid inventory provided"
 
     # if no output inventory file is explicitly passed
     # the module replace the existing input inventory
     if out_inventory is None:
-        out_inventory = inventory
+        out_inventory = inventory_path
 
-    if backup is None:
-        backup = False
+    # read the inventory ...
+    with open(inventory_path, 'r') as file:
+        inventory = yaml.load(file, yaml.SafeLoader)
 
-    # patch the inventory file and backup if True
-    patched_inventory = rm_group(group, inventory, backup)
+    # do the backup if the parameter is present!
+    if backup is not None and backup is True:
+        with open("{}.bkp".format(inventory), 'w') as f:
+            f.write(yaml.safe_dump(inventory, indent=2))
+
+    # manipulate the yaml file
+    for g in group:
+        # patch the inventory file and backup if True
+        inventory = rm_group(g, inventory, backup)
+
     # dump the new generated inventory file into the output file
-    mgs = write_inventory(out_inventory, group, patched_inventory)
-    result['message'] = mgs
+    write_inventory(out_inventory, inventory)
 
     module.exit_json(**result)
 

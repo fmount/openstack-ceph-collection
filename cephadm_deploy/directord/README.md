@@ -1,0 +1,106 @@
+DIRECTORD
+=========
+
+The purpose of this section is put the hands on the directord/task-core tools presented at the TripleO Yoga PTG.
+The first section/tutorial is about deploying a couple of nodes (Controller and Compute) and run the OpenStack
+services on them, then, later in the document, there's an attempt of deploying Ceph (triggering cephadm) using
+the new approach.
+
+## Deploy the lab
+
+
+KCLI is the tool used to deploy a given number of Directord/task-core Nodes. This can be done using the related
+directord plan file (located in the [plan/](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/directord/plan/)
+directory) that can be customized adding or removing options, defining new parameters to reflect
+the status of your environment or making it able to execute a specific script at bootstrap time.
+
+    kcli create plan /path/to/your/plan/file directord
+
+At the end of this process, using the kcli cli we should be able to see the running nodes:
+
+    kcli list vms
+
+After the creation is completed, two additional actions should be executed:
+
+* Distribute the ssh keys to the nodes to make sure they can ssh each other: this action can be done using the
+  [build_env.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/build_env.sh) script:
+
+  ./build_env.sh -k
+
+* Double check the VMs can ssh each other and there are no pending dnf processes, then it's time to add additional
+  networks: stop the existing libvirt domains and run the [build_network.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/directord/build_network.sh) script.
+
+* start the domain(s)
+
+
+## Now, let's start installing directord on node0, which represents the server
+
+    pushd ~
+    sudo dnf -y install git gcc python3-pip python3-devel
+    git clone https://github.com/directord/directord
+    pip3 install --user tox
+    cd directord
+    export PATH=$PATH:/root/.local/bin
+    tox -e venv python3 setup.py install_data
+    popd
+
+
+## Bootstrap directord
+
+* Copy the inventory ~directord-inventory-catalog.yaml~ to the first node
+
+    directord/.tox/venv/bin/directord bootstrap --catalog directord-inventory-catalog.yaml \
+      --catalog directord/tools/directord-dev-bootstrap-catalog.yaml
+
+
+and when it's done:
+
+    sudo chgrp $USER /var/run/directord.sock  && sudo chmod g+w /var/run/directord.sock
+
+    source /opt/directord/bin/activate
+
+Now the nodes are enrolled and can be managed by directord:
+
+    directord manage --list-nodes
+
+
+## TASK-CORE
+
+### Install task-core on the first node
+
+    sudo dnf -y install cmake make gcc gcc-c++ openssl-devel
+    sudo dnf -y update libarchive
+    git clone https://github.com/mwhahaha/task-core
+    sudo /opt/directord/bin/pip3 install task-core/
+
+
+The installation is over, now, it's time to copy some overrides and run deploy OpenStack!
+
+### Prepare the execution environment
+
+Copy the following files to the task-core node:
+
+* task-core-inventory.yml
+* task-core-hackfest.yml
+* os-net-config.yaml.j2
+
+**Note**
+
+Edit task-core/examples/directord/services/2node_config.yaml. Change the ADD command to:
+
+    - ADD: /YOUR/HOME/task-core-hackfest.yaml /var/tmp/directord-config.yaml
+
+Do not delete the CACHEFILE line
+
+Now edit task-core/examples/directord/services/os-net-config.yaml and change the ADD command to:
+
+    - ADD: >
+        --blueprint /YOUR/HOME/os-net-config.yaml.j2 /etc/os-net-config.yaml
+        --chown root
+
+Make sure you specify the correct path as needed in both ADD commands.
+
+### Run task-core
+
+    cd task-core/examples/directord/services
+    task-core -s . -i ~/task-core-inventory.yml -r ../basic/2node_roles.yaml -d

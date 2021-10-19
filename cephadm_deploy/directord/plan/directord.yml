@@ -1,0 +1,36 @@
+parameters:
+ nodes: 2
+ pool: default
+ network: default
+ domain: ***REMOVED***.local
+ prefix: directord
+ numcpus: 4
+ memory: 8192
+ image: centos8
+ notify: false
+ admin_password: iamgroot
+ disks:
+   - size: 20
+
+{% for number in range(0, nodes) %}
+{{ prefix }}-node{{ number }}:
+ image: {{ image }}
+ numcpus: {{ numcpus }}
+ memory: {{ memory }}
+ reservedns: true
+ sharedkey: true
+ domain: {{ domain }}
+ nets:
+  - {{ network }}
+ disks: {{ disks }}
+ pool: {{ pool }}
+ cmds:
+ - dnf -y install python3 chrony lvm2 podman vim jq tmux
+ - sed -i "s/SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
+ - setenforce 0
+ - echo {{ admin_password  }} | passwd --stdin root
+ - hostnamectl set-hostname node{{ number }}
+ - hostnamectl set-hostname --transient node{{ number }}
+ - dnf swap -y centos-linux-repos centos-stream-repos
+ - dnf -y distro-sync
+{% endfor %}
