@@ -1,10 +1,13 @@
 # OpenStack and Ceph roles, scripts and notes collection
 
 The purpose of this repo is to collect scripts, notes, playbooks
-for each OpenStack cycle
+for each OpenStack and Ceph cycle.
 
-current OpenStack cycle: **Yoga**
-current Ceph release: **Pacific**
+| OpenStack    | Ceph           |
+|--------------|-----------------
+| Wallaby      | Octopus/Pacific|
+| Xena         | Pacific        |
+| Yoga         | Pacific        |
 
 
 ## Deploy a TripleO lab
