@@ -6,8 +6,7 @@ ORIG_CONFIG="$HOME/bootstrap_ceph.conf"
 CONFIG="/etc/ceph/ceph.conf"
 KEYRING="/etc/ceph/ceph.client.admin.keyring"
 CEPH_PUB_KEY="/etc/ceph/ceph.pub"
-EXPORT="$HOME/ceph_export.yml"
-REQUIREMENTS=("jq" "lvm" "python")
+REQUIREMENTS=("jq" "lvm" "python3")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
@@ -31,6 +30,10 @@ NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
 INGRESS_SPEC="ingress.yml"
 
+NFS_CLIENT=0
+NFS_CLIENT_NAME="client.manila"
+NFS_CLIENT_LOG="/var/log/ceph-$NFS_CLIENT_NAME.log"
+
 # POOLS
 declare -A POOLS
 # POOLS[test]='rbd'
@@ -39,6 +42,11 @@ DEFAULT_PGP_NUM=8
 
 # RGW OPTIONS
 RGW_PORT=8080
+
+# CLIENT CONFIG
+RBD_CLIENT_LOG=/var/log/ceph/qemu-guest-$pid.log
+CLIENT_CONFIG=$HOME/ceph_client.conf
+EXPORT=$HOME/ceph_export.yml
 
 [ -z "$SUDO" ] && SUDO=sudo
 
@@ -83,10 +91,8 @@ function build_osds_from_list() {
 }
 
 function rgw() {
-    # TODO: Add more logic here and process parameters
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-        --keyring $KEYRING -- ceph orch apply rgw default \
-        '--placement="$HOSTNAME" count:1' --port "$RGW_PORT"
+        --keyring $KEYRING -- ceph orch apply rgw default \'--placement="$HOSTNAME" count:1\' --port "$RGW_PORT"
 }
 
 function mds() {
@@ -125,6 +131,7 @@ function process_services() {
           nfs|NFS)
           echo "Deploying NFS on node $HOSTNAME"
           nfs
+          NFS_CLIENT=1
           ;;
           rgw|RGW)
           echo "Deploying RGW on node $HOSTNAME"
@@ -176,7 +183,7 @@ function create_keys() {
 
     $SUDO "$CEPHADM" shell -v "$KEY_EXPORT_DIR:$KEY_EXPORT_DIR" --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph auth get-or-create "$name" mon "allow r" osd "$osd_caps" \
-        -o "KEY_EXPORT_DIR/$name.keyring"
+        -o "$KEY_EXPORT_DIR/$name.keyring"
 }
 
 function cephadm_debug() {
@@ -420,3 +427,26 @@ done
 process_services
 check_cluster_status
 export_spec
+
+# render a ceph client config file
+echo "Dump the minimal ceph.conf"
+cp $CONFIG $CLIENT_CONFIG
+
+cat >> $CLIENT_CONFIG <<-EOF
+[client.libvirt]
+admin socket = /var/run/ceph/$cluster-$type.$id.$pid.$cctid.asok
+log file = $RBD_CLIENT_LOG
+
+EOF
+
+if [ "$NFS_CLIENT" -eq 1 ]; then
+cat >> $CLIENT_CONFIG <<-EOF
+[$NFS_CLIENT_NAME]
+client mount uid = 0
+client mount gid = 0
+log file = $NFS_CLIENT_LOG
+admin socket = /var/run/ceph/\$cluster-\$type.\$id.\$pid.\$cctid.asok
+keyring = $KEY_EXPORT_DIR/$NFS_CLIENT_NAME.keyring
+EOF
+echo "Client config exported: $CLIENT_CONFIG"
+fi
