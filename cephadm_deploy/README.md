@@ -38,10 +38,10 @@ the following steps:
 
 1. Delete an environment
 2. Build a new Ceph environment:
-    a. Build nodes via kcli and its associated plan file
-    b. Distribute the access key across the inventory nodes
-    c. Build the inventory starting from the sample file
-    d. Build the ansible related vars
+    * Build nodes via kcli and its associated plan file
+    * Distribute the access key across the inventory nodes
+    * Build the inventory starting from the sample file
+    * Build the ansible related vars
 3. Create the cephadm user and distribute the keys
 4. Run the cephadm playbook
 
