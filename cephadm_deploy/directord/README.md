@@ -1,5 +1,5 @@
-DIRECTORD
-=========
+DIRECTORD (HACKFEST/POC)
+========================
 
 The purpose of this section is put the hands on the directord/task-core tools presented at the TripleO Yoga PTG.
 The first section/tutorial is about deploying a couple of nodes (Controller and Compute) and run the OpenStack
@@ -25,7 +25,9 @@ After the creation is completed, two additional actions should be executed:
 * Distribute the ssh keys to the nodes to make sure they can ssh each other: this action can be done using the
   [build_env.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/build_env.sh) script:
 
-  ./build_env.sh -k
+
+    ./build_env.sh -k
+
 
 * Double check the VMs can ssh each other and there are no pending dnf processes, then it's time to add additional
   networks: stop the existing libvirt domains and run the [build_network.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/directord/build_network.sh) script.
@@ -47,7 +49,8 @@ After the creation is completed, two additional actions should be executed:
 
 ## Bootstrap directord
 
-* Copy the inventory ~directord-inventory-catalog.yaml~ to the first node
+* Copy the inventory `directord-inventory-catalog.yaml` to the first node
+
 
     directord/.tox/venv/bin/directord bootstrap --catalog directord-inventory-catalog.yaml \
       --catalog directord/tools/directord-dev-bootstrap-catalog.yaml
