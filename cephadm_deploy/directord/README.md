@@ -25,8 +25,9 @@ After the creation is completed, two additional actions should be executed:
 * Distribute the ssh keys to the nodes to make sure they can ssh each other: this action can be done using the
   [build_env.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy/build_env.sh) script:
 
-
+    ```
     ./build_env.sh -k
+    ```
 
 
 * Double check the VMs can ssh each other and there are no pending dnf processes, then it's time to add additional
@@ -51,9 +52,10 @@ After the creation is completed, two additional actions should be executed:
 
 * Copy the inventory `directord-inventory-catalog.yaml` to the first node
 
-
+    ```
     directord/.tox/venv/bin/directord bootstrap --catalog directord-inventory-catalog.yaml \
       --catalog directord/tools/directord-dev-bootstrap-catalog.yaml
+    ```
 
 
 and when it's done:
