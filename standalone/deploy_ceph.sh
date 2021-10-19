@@ -93,7 +93,7 @@ function build_osds_from_list() {
 function rgw() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply rgw default default default \
-        "--placement="$HOSTNAME" count:1\" --port "$RGW_PORT"
+        "--placement=$HOSTNAME count:1" --port "$RGW_PORT"
 }
 
 function mds() {
