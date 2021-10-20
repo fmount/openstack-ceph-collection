@@ -12,6 +12,7 @@ The relevant files are:
 
 
 The services structure looks like:
+```
     ...
     ...
     services/
@@ -19,6 +20,7 @@ The services structure looks like:
     └── ceph_packages.yaml
     ...
     ...
+```
 
 
 ## Run the Ceph role
