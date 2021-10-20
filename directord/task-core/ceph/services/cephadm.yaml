@@ -1,0 +1,31 @@
+id: cephadm
+type: service
+version: 1.0.0
+tasks:
+  - id: init
+    action: run
+    driver: directord
+    provides:
+      - cephadm.init
+    requires:
+      - sshd.init
+      - ssh_user.init
+    jobs:
+      - RUN: >-
+          cluster=$(sudo cephadm ls | jq '.[]' | jq 'select(.name | test("^mon*")).fsid');
+          if [ -z "$cluster"]; then
+              cephadm --image {{ tripleo_cephadm_container_ns + '/' + tripleo_cephadm_container_image + ':' + tripleo_cephadm_container_tag }}
+              bootstrap
+              --skip-firewalld
+              --ssh-private-key /home/{{ tripleo_cephadm_ssh_user }}/.ssh/id_ed25519
+              --ssh-public-key /home/{{ tripleo_cephadm_ssh_user }}/.ssh/id_ed25519.pub
+              --ssh-user {{ tripleo_cephadm_ssh_user }}
+              --allow-fqdn-hostname
+              --output-keyring {{ tripleo_cephadm_admin_keyring }}
+              --output-config {{ tripleo_cephadm_conf }}
+              --fsid {{ tripleo_cephadm_fsid }}
+              --skip-monitoring-stack --skip-dashboard
+              --allow-overwrite
+              --mon-ip {{ tripleo_cephadm_first_mon_ip }};
+          fi
+

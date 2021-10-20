@@ -1,0 +1,21 @@
+ceph:
+  services:
+    # framework services
+    - 2node_config
+    - hostname
+    - hosts
+    - openvswitch
+    - os-net-config
+    - repos
+    - selinux
+    # other services
+    - boot_params_service
+    - ca_certs
+    - podman
+    - sshd
+    - chronyd
+    - timezone
+    - tripleo_firewall
+    - ceph_packages
+    - ssh_user
+    - cephadm
