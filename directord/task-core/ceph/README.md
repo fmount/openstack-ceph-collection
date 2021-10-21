@@ -25,6 +25,9 @@ The services structure looks like:
 
 ## Run the Ceph role
 
+For this POC the [ssh_user](https://github.com/fultonj/task-core/commit/d8151ba3c118b961f053cca3e0bd1db4a8201492) is
+imported and used.
+
 Copy the files described in the previous section on the task-core workdir, then run:
 
     task-core -s . -i ~/task-core-inventory-ceph_nodes.yaml -r ../basic/ceph.yaml -d
