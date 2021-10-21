@@ -27,4 +27,4 @@ The services structure looks like:
 
 Copy the files described in the previous section on the task-core workdir, then run:
 
-    task-core -s . -i ~/task-core-inventory-ceph_first_mon.yaml -r ../basic/single_node_ceph.yaml -d
+    task-core -s . -i ~/task-core-inventory-ceph_nodes.yaml -r ../basic/ceph.yaml -d

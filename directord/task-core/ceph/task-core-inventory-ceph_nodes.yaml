@@ -1,0 +1,5 @@
+hosts:
+  node-00:
+    role: ceph
+  node-01:
+    role: ceph

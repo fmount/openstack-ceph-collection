@@ -12,6 +12,7 @@ tasks:
       - ssh_user.init
     jobs:
       - RUN: >-
+          --run-once
           cluster=$(sudo cephadm ls | jq '.[]' | jq 'select(.name | test("^mon*")).fsid');
           if [ -z "$cluster"]; then
               cephadm --image {{ tripleo_cephadm_container_ns + '/' + tripleo_cephadm_container_image + ':' + tripleo_cephadm_container_tag }}
