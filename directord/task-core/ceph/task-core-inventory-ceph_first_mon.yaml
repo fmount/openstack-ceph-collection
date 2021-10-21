@@ -1,3 +1,0 @@
-hosts:
-  node-00:
-    role: ceph
