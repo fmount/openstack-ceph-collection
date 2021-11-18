@@ -121,7 +121,7 @@ test_add_rgw() {
     -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
     -k 1.2.3.0/24,4.5.6.0/24 \
     -s "{'rgw_frontend_port': 8080, 'rgw_realm': 'default', 'rgw_zone': 'default', \
-         'rgw_frontend_ssl_certificate': '***REMOVED***}" \
+         'rgw_frontend_ssl_certificate': '-----BEGIN CERTIFICATE-----\nAAA\n-----END PRIVATE KEY-----\n'}" \
     #-o "$TARGET_OUT"/rgw
   } >> "$1"
 
@@ -204,7 +204,7 @@ test_add_ingress() {
             -s "{'backend_service': 'rgw.default', 'virtual_ip': '192.168.122.3', \
                  'frontend_port': '8080', 'monitor_port': '8999', \
                  'virtual_interface_networks':['192.168.122.0/24', '10.0.5.0/24'], \
-                 'ssl_cert': '***REMOVED***}"
+                 'ssl_cert': '-----BEGIN CERTIFICATE-----\nAAAAA\n-----END PRIVATE KEY-----\n'}"
             } >> "$2"
             ;;
         "nfs")
