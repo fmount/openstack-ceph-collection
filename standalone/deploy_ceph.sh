@@ -28,8 +28,7 @@ NFS_INGRESS=0
 NFS_PORT=12345
 NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
-INGRESS_SPEC="ingress.yml"
-
+NFS_INGRESS_SPEC="nfs_ingress.yml"
 NFS_CLIENT=0
 NFS_CLIENT_NAME="client.manila"
 NFS_CLIENT_LOG="/var/log/ceph-$NFS_CLIENT_NAME.log"
@@ -42,6 +41,10 @@ DEFAULT_PGP_NUM=8
 
 # RGW OPTIONS
 RGW_PORT=8080
+RGW_INGRESS=1
+RGW_INGRESS_FPORT=80000
+RGW_INGRESS_MPORT=89000
+RGW_INGRESS_SPEC="rgw_ingress.yml"
 
 # CLIENT CONFIG
 RBD_CLIENT_LOG=/var/log/ceph/qemu-guest-$pid.log
@@ -94,6 +97,13 @@ function rgw() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply rgw default default default \
         "--placement=$HOSTNAME count:1" --port "$RGW_PORT"
+
+    if [ "$RGW_INGRESS" -eq 1 ]; then
+      echo "[CEPHADM] Deploy rgw.default Ingress Service"
+      $SUDO "$CEPHADM" shell -m /tmp/"$RGW_INGRESS_SPEC" --fsid $FSID \
+          --config $CONFIG --keyring $KEYRING -- ceph orch apply -i \
+          /mnt/"$RGW_INGRESS_SPEC"
+    fi
 }
 
 function mds() {
@@ -116,9 +126,9 @@ function nfs() {
 
     if [ "$NFS_INGRESS" -eq 1 ]; then
       echo "[CEPHADM] Deploy nfs.$FSNAME Ingress Service"
-      $SUDO "$CEPHADM" shell -m /tmp/"$INGRESS_SPEC" --fsid $FSID \
+      $SUDO "$CEPHADM" shell -m /tmp/"$NFS_INGRESS_SPEC" --fsid $FSID \
           --config $CONFIG --keyring $KEYRING -- ceph orch apply -i \
-          /mnt/"$INGRESS_SPEC"
+          /mnt/"$NFS_INGRESS_SPEC"
     fi
 }
 
@@ -377,6 +387,9 @@ $SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
       --skip-firewalld \
       --mon-ip $IP
 
+test -e $CONFIG
+test -e $KEYRING
+
 # Wait cephadm backend to be operational
 sleep "$SLEEP"
 fi
@@ -404,7 +417,7 @@ echo "[CEPHADM] OSD(s) deployed: $num_osds"
 
 
 if [ "$NFS_INGRESS" -eq 1 ]; then
-cat > /tmp/$INGRESS_SPEC <<-EOF
+cat > /tmp/$NFS_INGRESS_SPEC <<-EOF
 service_type: ingress
 service_id: nfs.$FSNAME
 placement:
@@ -413,7 +426,22 @@ spec:
   backend_service: nfs.$FSNAME
   frontend_port: $NFS_INGRESS_FPORT
   monitor_port: $NFS_INGRESS_MPORT
-  virtual_ip: $IP/24" > /tmp/"$INGRESS_SPEC"
+  virtual_ip: $IP/24"
+EOF
+fi
+
+if [ "$RGW_INGRESS" -eq 1 ]; then
+cat > /tmp/$RGW_INGRESS_SPEC <<-EOF
+service_type: ingress
+service_id: rgw.default
+service_name: ingress.rgw.default
+placement:
+  count: 1
+spec:
+  backend_service: rgw.default
+  frontend_port: $RGW_INGRESS_FPORT
+  monitor_port: $RGW_INGRESS_MPORT
+  virtual_ip: $IP/24"
 EOF
 fi
 
