@@ -196,11 +196,11 @@ test_add_full_fail() {
 test_add_ingress() {
     case $1 in
         "rgw")
-            if test_add_rgw "$TARGET_OUT/rgw_spec"; then
+            if test_add_rgw "$TARGET_OUT/rgw"; then
                 echo "> RGW spec exported in $TARGET_OUT"
             fi
             {
-            python mkspec.py -d ingress -i rgw.default -p "*controller*" \
+            python mkspec.py -d ingress -i rgw.default -n ingress.rgw.default -p "*controller*" \
             -s "{'backend_service': 'rgw.default', 'virtual_ip': '192.168.122.3', \
                  'frontend_port': '8080', 'monitor_port': '8999', \
                  'virtual_interface_networks':['192.168.122.0/24', '10.0.5.0/24'], \
@@ -208,11 +208,11 @@ test_add_ingress() {
             } >> "$2"
             ;;
         "nfs")
-            if test_add_ganesha "$TARGET_OUT/nfs_spec"; then
+            if test_add_ganesha "$TARGET_OUT/nfs"; then
                 echo "> NFS spec exported in $TARGET_OUT"
             fi
             {
-            python mkspec.py -d ingress -i standalone_nfs -p "*controller*" \
+            python mkspec.py -d ingress -i standalone_nfs -n ingress.standalone_nfs -p "*controller*" \
             -s "{'backend_service': 'standalone_nfs', 'virtual_ip': '192.168.122.3', \
                  'frontend_port': '8080', 'monitor_port': '8999', \
                  'virtual_interface_networks':['192.168.122.0/24', '10.0.5.0/24']}"
@@ -275,6 +275,9 @@ test_suite() {
             "ganesha" "full"; do
             echo "Building $use_case spec";
             test_add_$use_case"$fail" "$TARGET_OUT/$use_case"
+        done
+        for d in "rgw" "nfs"; do
+            test_add_ingress"$fail" "$d" $TARGET_OUT/ingress_"$d"_spec;
         done
         ;;
     "full")
