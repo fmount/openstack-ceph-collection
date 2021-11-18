@@ -134,6 +134,20 @@ test_add_rgw_fail() {
     -o "$TARGET_OUT"/rgw
 }
 
+test_add_agent() {
+  python mkspec.py -d agent -i agent -n agent \
+      -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']},${ceph_cluster['osd1']},${ceph_cluster['osd2']},${ceph_cluster['osd3']} \
+      -o "$TARGET_OUT"/agent
+}
+
+test_add_agent_fail() {
+  echo "NOT IMPLEMENTED"
+  exit 0
+  #python mkspec.py -d agent -i agent -n agent \
+  #    -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
+  #    -o "$TARGET_OUT"/agent
+}
+
 test_add_ganesha() {
   # mds - Add the mds daemon on controllers
 
@@ -209,11 +223,12 @@ usage() {
   echo
   echo "./test.sh -a  # build all the use cases in \$TARGET_DIR"
   echo "./test.sh -c  # Clean \$TARGET_DIR"
-  echo "./test.sh -u rgw  # render the rgw use case in \$TARGET_DIR"
-  echo "./test.sh -u osd  # render the osd use case in \$TARGET_DIR"
-  echo "./test.sh -u full # render the full ceph cluster use case in \$TARGET_DIR"
-  echo "./test.sh -f rgw  # print the exception reported by the failed test"
-  echo "./test.sh -f osd  # print the exception reported by the failed test"
+  echo "./test.sh -u rgw   # render the rgw use case in \$TARGET_DIR"
+  echo "./test.sh -u osd   # render the osd use case in \$TARGET_DIR"
+  echo "./test.sh -u agent # render the agent use case in \$TARGET_DIR"
+  echo "./test.sh -u full  # render the full ceph cluster use case in \$TARGET_DIR"
+  echo "./test.sh -f rgw   # print the exception reported by the failed test"
+  echo "./test.sh -f osd   # print the exception reported by the failed test"
   exit 1
 }
 
@@ -269,6 +284,13 @@ test_suite() {
             echo "RGW spec exported in $TARGET_OUT"
         fi
         ;;
+    "agent")
+        echo "Building AGENT spec"
+        if test_add_agent"$fail" "$TARGET_OUT/agent_spec"; then
+            echo "AGENT spec exported in $TARGET_OUT"
+        fi
+        ;;
+
   esac
 }
 
