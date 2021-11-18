@@ -136,7 +136,7 @@ EXAMPLES = '''
 RETURN = '''#  '''
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
-                   'crash', 'prometheus', 'alertmanager', 'node-exporter']
+                   'crash', 'prometheus', 'alertmanager', 'node-exporter', 'agent']
 
 def generate_orch_cli(cluster, spec_path, container_image):
 

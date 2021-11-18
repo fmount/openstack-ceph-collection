@@ -23,7 +23,7 @@ import sys
 import re
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
-                   'crash', 'prometheus', 'alertmanager', 'node-exporter']
+                   'crash', 'prometheus', 'alertmanager', 'node-exporter', 'agent']
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
@@ -319,7 +319,8 @@ def parse_opts(argv):
                         help=("What kind of service we're going to apply"),
                         default='none', choices=['host', 'mon', 'mgr', 'mds', 'nfs', \
                                                  'osd', 'rgw', 'grafana', 'prometheus', \
-                                                 'alertmanager', 'crash', 'node-exporter'])
+                                                 'alertmanager', 'crash', 'node-exporter', \
+                                                 'agent'])
     parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',
