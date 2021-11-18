@@ -23,7 +23,8 @@ import sys
 import re
 
 ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
-                   'crash', 'prometheus', 'alertmanager', 'node-exporter', 'agent']
+                   'crash', 'prometheus', 'alertmanager', 'node-exporter',
+                   'agent', 'ingress']
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
@@ -48,6 +49,14 @@ ALLOWED_SPEC_KEYS = {
     'nfs': [
         'namespace',
         'pool'
+    ],
+    'ingress': [
+        'backend_service',
+        'frontend_port',
+        'monitor_port',
+        'virtual_ip',
+        'virtual_interface_networks',
+        'ssl_cert'
     ]
 }
 
@@ -320,7 +329,7 @@ def parse_opts(argv):
                         default='none', choices=['host', 'mon', 'mgr', 'mds', 'nfs', \
                                                  'osd', 'rgw', 'grafana', 'prometheus', \
                                                  'alertmanager', 'crash', 'node-exporter', \
-                                                 'agent'])
+                                                 'agent', 'ingress'])
     parser.add_argument('-i', '--service-id', metavar='SERVICE_ID',
                         help=("The service_id of the daemon we're going to apply"))
     parser.add_argument('-n', '--service-name', metavar='SERVICE_NAME',

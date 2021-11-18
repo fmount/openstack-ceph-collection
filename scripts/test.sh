@@ -143,9 +143,6 @@ test_add_agent() {
 test_add_agent_fail() {
   echo "NOT IMPLEMENTED"
   exit 0
-  #python mkspec.py -d agent -i agent -n agent \
-  #    -g ${ceph_cluster['mon1']},${ceph_cluster['mon2']},${ceph_cluster['mon3']} \
-  #    -o "$TARGET_OUT"/agent
 }
 
 test_add_ganesha() {
@@ -170,6 +167,7 @@ test_add_ganesha_fail() {
   }
 }
 
+
 test_add_hosts() {
   for key in "${!hostlist[@]}"; {
     case "$key" in
@@ -189,13 +187,42 @@ test_add_full() {
     printf " * Adding  %s\n" "$feature"
     test_add_$feature "$1"
   done
-
 }
 
 test_add_full_fail() {
     test_spec_not_available
 }
 
+test_add_ingress() {
+    case $1 in
+        "rgw")
+            if test_add_rgw "$TARGET_OUT/rgw_spec"; then
+                echo "> RGW spec exported in $TARGET_OUT"
+            fi
+            {
+            python mkspec.py -d ingress -i rgw.default -p "*controller*" \
+            -s "{'backend_service': 'rgw.default', 'virtual_ip': '192.168.122.3', \
+                 'frontend_port': '8080', 'monitor_port': '8999', \
+                 'virtual_interface_networks':['192.168.122.0/24', '10.0.5.0/24'], \
+                 'ssl_cert': '***REMOVED***}"
+            } >> "$2"
+            ;;
+        "nfs")
+            if test_add_ganesha "$TARGET_OUT/nfs_spec"; then
+                echo "> NFS spec exported in $TARGET_OUT"
+            fi
+            {
+            python mkspec.py -d ingress -i standalone_nfs -p "*controller*" \
+            -s "{'backend_service': 'standalone_nfs', 'virtual_ip': '192.168.122.3', \
+                 'frontend_port': '8080', 'monitor_port': '8999', \
+                 'virtual_interface_networks':['192.168.122.0/24', '10.0.5.0/24']}"
+            } >> "$2"
+            ;;
+      *)
+        usage
+        ;;
+    esac
+}
 
 cleanup() {
     printf "Cleaning up %s\n" "$TARGET_OUT"
@@ -226,6 +253,8 @@ usage() {
   echo "./test.sh -u rgw   # render the rgw use case in \$TARGET_DIR"
   echo "./test.sh -u osd   # render the osd use case in \$TARGET_DIR"
   echo "./test.sh -u agent # render the agent use case in \$TARGET_DIR"
+  echo "./test.sh -u ingress -d nfs # render the ingress daemon spec associated to nfs in \$TARGET_DIR"
+  echo "./test.sh -u ingress -d rgw # render the ingress daemon spec associated to rgw in \$TARGET_DIR"
   echo "./test.sh -u full  # render the full ceph cluster use case in \$TARGET_DIR"
   echo "./test.sh -f rgw   # print the exception reported by the failed test"
   echo "./test.sh -f osd   # print the exception reported by the failed test"
@@ -235,6 +264,12 @@ usage() {
 test_suite() {
   [ -n "$2" ] && fail="$2" || fail=""
   case "$1" in
+    "agent")
+        echo "Building AGENT spec"
+        if test_add_agent"$fail" "$TARGET_OUT/agent_spec"; then
+            echo "AGENT spec exported in $TARGET_OUT"
+        fi
+        ;;
     "all")
         for use_case in "hosts" "minimal" "monitoring" "rgw" \
             "ganesha" "full"; do
@@ -260,10 +295,16 @@ test_suite() {
             echo "Host list exported in $TARGET_OUT"
         fi
         ;;
+    "ingress")
+        echo "Building the INGRESS spec for daemon $3"
+        if test_add_ingress"$fail" "$3" "$TARGET_OUT/ingress_$3_spec"; then
+            echo "> Ingress spec for daemon $3 exported in $TARGET_OUT"
+        fi
+        ;;
     "minimal")
         echo "Building minimal cluster spec"
         if test_add_minimal"$fail" "$TARGET_OUT/minimal_cluster_spec"; then
-            echo "Minimal spec exported in $TARGET_OUT"
+            echo "> Minimal spec exported in $TARGET_OUT"
         fi
         ;;
     "mon")
@@ -281,16 +322,9 @@ test_suite() {
     "rgw")
         echo "Building RGW spec"
         if test_add_rgw"$fail" "$TARGET_OUT/rgw_spec"; then
-            echo "RGW spec exported in $TARGET_OUT"
+            echo "> RGW spec exported in $TARGET_OUT"
         fi
         ;;
-    "agent")
-        echo "Building AGENT spec"
-        if test_add_agent"$fail" "$TARGET_OUT/agent_spec"; then
-            echo "AGENT spec exported in $TARGET_OUT"
-        fi
-        ;;
-
   esac
 }
 
@@ -301,7 +335,7 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 # processing options
-while getopts "f:u:acph" o; do
+while getopts "f:u:d:acph" o; do
     case "${o}" in
       a)
         u="all"
@@ -309,6 +343,9 @@ while getopts "f:u:acph" o; do
       c)
         cleanup
         exit 0
+        ;;
+      d)
+        d=${OPTARG}
         ;;
       f)
         f="_fail"
@@ -341,4 +378,4 @@ mkdir -p "$TARGET_OUT"
 
 # always use the last option provided since this is a "one shot"
 # script
-test_suite "${u}" "${f}"
+test_suite "${u}" "${f}" "${d}"
