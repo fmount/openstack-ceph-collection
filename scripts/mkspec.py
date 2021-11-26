@@ -28,6 +28,9 @@ ALLOWED_DAEMONS = ['host', 'mon', 'mgr', 'mds', 'nfs', 'osd', 'rgw', 'grafana',
 
 ALLOWED_HOST_PLACEMENT_MODE = ['hosts', 'host_pattern', 'label']
 
+CRUSH_ALLOWED_LOCATION = ['osd', 'host', 'chassis', 'rack', 'row', 'pdu', 'pod', \
+                          'room', 'datacenter', 'zone', 'region', 'root']
+
 ALLOWED_EXTRA_KEYS = {
     'osd': [
         'data_devices',
@@ -59,6 +62,7 @@ ALLOWED_SPEC_KEYS = {
         'ssl_cert'
     ]
 }
+
 
 
 class CephPlacementSpec(object):
@@ -143,14 +147,15 @@ class CephPlacementSpec(object):
         else:
             spec_template = {}
 
-        # TODO: Add count to the list of placement parameters
         return spec_template
 
 class CephHostSpec(object):
     def __init__(self, daemon_type: str,
                  daemon_addr: str,
                  daemon_hostname: str,
-                 labels: list[str]):
+                 labels: list[str],
+                 location: dict = None,
+                 ):
 
         self.daemon_type = daemon_type
         self.daemon_addr = daemon_addr
@@ -159,8 +164,21 @@ class CephHostSpec(object):
         assert isinstance(labels, list)
         self.labels = labels
 
+        # init crush location parameters
+        if location and isinstance(location, dict):
+            self.location = location
+        else:
+            self.location = {}
+
+    def is_valid_crush_location(self):
+        for k in self.location.keys():
+            if k not in CRUSH_ALLOWED_LOCATION:
+                return False
+        return True
+
     def make_daemon_spec(self):
         lb = {}
+        crloc = {}
 
         spec_template = {
             'service_type': self.daemon_type,
@@ -171,7 +189,13 @@ class CephHostSpec(object):
         if len(self.labels) > 0:
             lb = {'labels': self.labels}
 
-        spec_template = {**spec_template, **lb}
+        if self.location:
+            if self.is_valid_crush_location():
+                crloc = {'location': self.location}
+            else:
+                raise Exception("Fatal: the spec should be composed by only allowed keywords")
+
+        spec_template = {**spec_template, **lb, **crloc}
         return (yaml.dump(spec_template, indent=2))
 
 class CephDaemonSpec(object):
@@ -243,7 +267,6 @@ class CephDaemonSpec(object):
             ntw = {
                 'networks': self.networks
             }
-
 
         # process extra parameters if present
         if not self.validate_keys(self.extra.keys(), ALLOWED_EXTRA_KEYS):
@@ -356,6 +379,8 @@ def parse_opts(argv):
                         default=[])
     parser.add_argument('-o', '--output-file', metavar='OUT_FILE',
                         help=("Path to the output file"))
+    parser.add_argument('-q', '--crush', metavar='CRUSH',
+                        help=("Location of the crushmap placement"))
     opts = parser.parse_args(argv[1:])
 
     return opts
@@ -369,6 +394,7 @@ if __name__ == "__main__":
     hosts = []
     networks = []
     pattern = None
+    location = {}
 
     if OPTS.daemon not in ALLOWED_DAEMONS:
         print('Error, unable to render the spec for an Unknown Ceph daemon!')
@@ -398,8 +424,11 @@ if __name__ == "__main__":
     if OPTS.extra is not None and len(OPTS.extra) > 0:
         extra = json.loads(OPTS.extra.replace("'", "\""))
 
+    if OPTS.crush:
+        location = json.loads(OPTS.crush.replace("'", "\""))
+
     if OPTS.daemon == "host":
-        d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, labels)
+        d = CephHostSpec(OPTS.daemon, OPTS.address, OPTS.hostname, labels, location)
     else:
         d = CephDaemonSpec(OPTS.daemon, \
                 OPTS.service_id, \
