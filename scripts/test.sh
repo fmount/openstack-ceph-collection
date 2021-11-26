@@ -32,6 +32,34 @@ test_spec_not_available() {
     usage
 }
 
+test_add_host_crush() {
+  for key in "${!ceph_cluster[@]}"; do
+    host="$key"
+    hostname=${ceph_cluster["$key"]}
+    addr=${hostlist["${ceph_cluster["$key"]}"]}
+    case "$host" in
+      *mon*) label="mon" ;;
+      *osd*) label="osd" ;;
+    esac
+    python mkspec.py -d 'host' -a $hostname -z $addr -l $label \
+        -q "{'root': 'default-1', 'rack': 'r1', 'host': 'h1'}" >> "$1"
+  done
+}
+
+test_add_host_crush_fail() {
+  for key in "${!ceph_cluster[@]}"; do
+    host="$key"
+    hostname=${ceph_cluster["$key"]}
+    addr=${hostlist["${ceph_cluster["$key"]}"]}
+    case "$host" in
+      *mon*) label="mon" ;;
+      *osd*) label="osd" ;;
+    esac
+    python mkspec.py -d 'host' -a $hostname -z $addr -l $label \
+        -q "{'root': 'default-1', 'rack': 'r1', 'hostSSSS': 'h1'}" >> "$1"
+  done
+}
+
 # Building hosts
 test_add_minimal() {
   for key in "${!ceph_cluster[@]}"; do
@@ -248,16 +276,17 @@ usage() {
   echo
   echo "Examples"
   echo
-  echo "./test.sh -a  # build all the use cases in \$TARGET_DIR"
-  echo "./test.sh -c  # Clean \$TARGET_DIR"
-  echo "./test.sh -u rgw   # render the rgw use case in \$TARGET_DIR"
-  echo "./test.sh -u osd   # render the osd use case in \$TARGET_DIR"
-  echo "./test.sh -u agent # render the agent use case in \$TARGET_DIR"
-  echo "./test.sh -u ingress -d nfs # render the ingress daemon spec associated to nfs in \$TARGET_DIR"
-  echo "./test.sh -u ingress -d rgw # render the ingress daemon spec associated to rgw in \$TARGET_DIR"
-  echo "./test.sh -u full  # render the full ceph cluster use case in \$TARGET_DIR"
-  echo "./test.sh -f rgw   # print the exception reported by the failed test"
-  echo "./test.sh -f osd   # print the exception reported by the failed test"
+  echo "./test.sh -a                    # build all the use cases in \$TARGET_DIR"
+  echo "./test.sh -c                    # Clean \$TARGET_DIR"
+  echo "./test.sh -u rgw                # render the rgw use case in \$TARGET_DIR"
+  echo "./test.sh -u minimal            # render the minimal use case in \$TARGET_DIR"
+  echo "./test.sh -u osd                # render the osd use case in \$TARGET_DIR"
+  echo "./test.sh -u agent              # render the agent use case in \$TARGET_DIR"
+  echo "./test.sh -u ingress -d nfs     # render the ingress daemon spec associated to nfs in \$TARGET_DIR"
+  echo "./test.sh -u ingress -d rgw     # render the ingress daemon spec associated to rgw in \$TARGET_DIR"
+  echo "./test.sh -u full               # render the full ceph cluster use case in \$TARGET_DIR"
+  echo "./test.sh -f rgw                # print the exception reported by the failed test"
+  echo "./test.sh -f osd                # print the exception reported by the failed test"
   exit 1
 }
 
@@ -279,6 +308,12 @@ test_suite() {
         for d in "rgw" "nfs"; do
             test_add_ingress"$fail" "$d" $TARGET_OUT/ingress_"$d"_spec;
         done
+        ;;
+    "crush")
+        echo "Building host_list with crush_location"
+        if test_add_host_crush"$fail" "$TARGET_OUT/host_list_crush"; then
+            echo "Host list exported in $TARGET_OUT"
+        fi
         ;;
     "full")
         echo "Building Full Ceph Cluster spec"
