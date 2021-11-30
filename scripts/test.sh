@@ -35,14 +35,18 @@ test_spec_not_available() {
 test_add_host_crush() {
   for key in "${!ceph_cluster[@]}"; do
     host="$key"
-    hostname=${ceph_cluster["$key"]}
-    addr=${hostlist["${ceph_cluster["$key"]}"]}
+    addr=${ceph_cluster["$key"]}
+    hostname=${hostlist["${ceph_cluster["$key"]}"]}
     case "$host" in
       *mon*) label="mon" ;;
       *osd*) label="osd" ;;
     esac
-    python mkspec.py -d 'host' -a $hostname -z $addr -l $label \
-        -q "{'root': 'default-1', 'rack': 'r1', 'host': 'h1'}" >> "$1"
+    if [ "$label" == "osd" ]; then
+        python mkspec.py -d 'host' -a $hostname -z $addr -l $label \
+            -q "{'root': 'default-1', 'rack': 'r1', 'host': 'h1'}" >> "$1"
+    else
+        python mkspec.py -d 'host' -a $hostname -z $addr -l $label >> "$1"
+    fi
   done
 }
 
