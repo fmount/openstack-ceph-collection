@@ -1,0 +1,13 @@
+---
+osd-0:
+  root: default
+  rack: r0
+  host: h0
+osd-1:
+  root: default
+  rack: r1
+  host: h1
+osd-2:
+  root: default
+  rack: r2
+  host: h2
