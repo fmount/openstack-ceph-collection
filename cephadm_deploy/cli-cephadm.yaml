@@ -14,13 +14,29 @@
 #   under the License.
 
 - name: Deploy Ceph with cephadm
-  hosts: ceph1_mon[0]
+  hosts: ceph_mon[0]
   tasks:
     - name: Satisfy Ceph prerequisites
       import_role:
         name: tripleo_cephadm
         tasks_from: pre
-
+    - name: push tripleo_cephadm_spec_inventory to bootstrap node
+      copy:
+        src: "{{ inventory_file }}"
+        dest: "{{ tripleo_cephadm_spec_inventory }}"
+        owner: "{{ tripleo_cephadm_ssh_user }}"
+        group: "{{ tripleo_cephadm_ssh_user }}"
+        mode: '0644'
+      become: true
+    - name: generate ceph_spec for bootstrap
+      ceph_spec_bootstrap:
+        new_ceph_spec: "{{ tripleo_run_cephadm_spec_path }}"
+        tripleo_ansible_inventory: "{{ tripleo_cephadm_spec_inventory }}"
+        fqdn: "{{ ceph_spec_fqdn }}"
+        osd_spec: "{{ ceph_osd_spec }}"
+        crush_hierarchy: "{{ ceph_crush_hierarchy | default({}) }}"
+      when:
+        - tripleo_cephadm_dynamic_spec
     - name: Bootstrap Ceph
       import_role:
         name: tripleo_cephadm
