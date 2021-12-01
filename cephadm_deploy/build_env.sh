@@ -11,6 +11,7 @@ DEFAULT_PLAN_PATH=nodes/ceph_cluster.yml
 DEFAULT_SSH_KEY="$HOME"/.ssh/kcli.pub
 INVENTORY="$PWD"/inventory.yaml
 VARS="$PWD"/vars/cephadm-extra-vars.yaml
+CRUSH_HIERARCHY="$PWD"/vars/cephadm-crush-hierarchy.yaml
 SLEEP=20
 build=0
 s_logs=1
@@ -58,7 +59,9 @@ run_cephadm() {
     echo "[CEPHADM] Create cephadm user and distribute keys on the nodes"
     ansible-playbook -i "$INVENTORY" distribute-keys.yaml -e @vars/ceph-admin.yaml 2>&1 | tee distribute_keys.log
     echo "[CEPHADM] Running cephadm playbook"
-    ansible-playbook -i "$INVENTORY" cli-cephadm.yaml -e @"$VARS" 2>&1 | tee cephadm_command.log
+
+    ansible-playbook -i "$INVENTORY" cli-cephadm.yaml -e @"$VARS" -e @"$CRUSH_HIERARCHY" 2>&1 | tee cephadm_command.log
+
 }
 
 main() {
@@ -101,10 +104,11 @@ usage() {
   # Display Help
   echo "This script is the helper to build a Ceph(adm) env. "
   echo
-  echo "Syntax: $0 [-a][-c][-u <use_case>][-f <use_case>]" 1>&2;
+  echo "Syntax: $0 [-a][-c][-k][-u <use_case>][-f <use_case>]" 1>&2;
   echo "Options:"
   echo "d     Deploy a new environment."
   echo "c     Cleanup the environment."
+  echo "k     Distribute keys."
   echo
   echo "Examples"
   echo
