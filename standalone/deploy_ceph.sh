@@ -10,7 +10,7 @@ REQUIREMENTS=("jq" "lvm" "python3")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v16.2.6'}
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v16.2.7'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
@@ -366,9 +366,6 @@ fi
 cat <<EOF > "$ORIG_CONFIG"
 [global]
   log to file = true
-  osd crush chooseleaf type = 0
-  osd_pool_default_pg_num = 8
-  osd_pool_default_pgp_num = 8
   osd_pool_default_size = 1
 [mon]
   mon_warn_on_insecure_global_id_reclaim_allowed = False
@@ -395,6 +392,7 @@ $SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
       --skip-monitoring-stack \
       --skip-dashboard \
       --skip-firewalld \
+      --single-host-defaults \
       --mon-ip $IP \
       $SHARED_OPT
 
