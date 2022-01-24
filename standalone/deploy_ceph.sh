@@ -51,6 +51,10 @@ RBD_CLIENT_LOG=/var/log/ceph/qemu-guest-$pid.log
 CLIENT_CONFIG=$HOME/ceph_client.conf
 EXPORT=$HOME/ceph_export.yml
 
+DEV=0
+WORKDIR=$HOME/ceph
+SHARED_OPT=""
+
 [ -z "$SUDO" ] && SUDO=sudo
 
 # TODO:
@@ -371,6 +375,12 @@ cat <<EOF > "$ORIG_CONFIG"
   mon_warn_on_pool_no_redundancy = False
 EOF
 
+if [ "$DEV" -eq 1 ]; then
+    mkdir -p "$WORKDIR"
+    git clone https://github.com/ceph/ceph "$WORKDIR"
+    SHARED_OPT="--shared_ceph_folder $WORKDIR"
+fi
+
 cluster=$(sudo cephadm ls | jq '.[]' | jq 'select(.name | test("^mon*")).fsid')
 if [ -z "$cluster" ]; then
 $SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
@@ -385,7 +395,8 @@ $SUDO $CEPHADM --image "$CONTAINER_IMAGE" \
       --skip-monitoring-stack \
       --skip-dashboard \
       --skip-firewalld \
-      --mon-ip $IP
+      --mon-ip $IP \
+      $SHARED_OPT
 
 test -e $CONFIG
 test -e $KEYRING
