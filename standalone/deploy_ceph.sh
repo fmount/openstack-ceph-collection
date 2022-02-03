@@ -46,6 +46,14 @@ RGW_INGRESS_FPORT=8444
 RGW_INGRESS_MPORT=8445
 RGW_INGRESS_SPEC="rgw_ingress.yml"
 
+# INGRESS CONFIG
+VIP=${VIP:-'127.0.0.1'} # the frontend vip managed by keepalived
+
+declare -A INGRESS_IMAGES
+INGRESS_IMAGES[haproxy]='2.3'
+INGRESS_IMAGES[keepalived]='2.1.5'
+
+
 # CLIENT CONFIG
 RBD_CLIENT_LOG=/var/log/ceph/qemu-guest-$pid.log
 CLIENT_CONFIG=$HOME/ceph_client.conf
@@ -242,6 +250,16 @@ function dump_all_logs() {
     done
 }
 
+function set_container_images() {
+    if [ "$NFS_INGRESS" -eq 1 ]; then
+        for image in "${!INGRESS_IMAGES[@]}"; do
+            echo "[CEPHADM] Setting custom $image:${INGRESS_IMAGES[$image]} image"
+            $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+                --keyring $KEYRING -- ceph config set mgr mgr/cephadm/container_image_$image quay.io/ceph/$image:${INGRESS_IMAGES[$image]}
+        done
+    fi
+}
+
 function prereq() {
     for cmd in "${REQUIREMENTS[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -292,7 +310,7 @@ function usage() {
     echo "> $0 -t"
     echo
     echo "A real use case Example"
-    echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
+    echo "$0 -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -v 192.168.121.206 -p volumes:rbd -s rgw -s nfs -s mds -d /dev/vdb"
 }
 
 function preview() {
@@ -324,6 +342,9 @@ function preview() {
     echo "---------"
     echo IP Address: "$IP"
     echo "---------"
+    echo "---------"
+    echo VIP Addresses: "$VIP"
+    echo "---------"
     echo "Container Image: $CONTAINER_IMAGE"
     echo "---------"
 }
@@ -334,7 +355,7 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 ## Process input parameters
-while getopts "c:s:i:p:d:k:t" opt; do
+while getopts "c:s:i:p:d:k:v:t" opt; do
     case $opt in
         c) CONTAINER_IMAGE="$OPTARG";;
         d) DEVICES+=("$OPTARG");;
@@ -350,6 +371,7 @@ while getopts "c:s:i:p:d:k:t" opt; do
         t) rm_cluster
            exit 0
            ;;
+        v) VIP="$OPTARG";;
         *) usage
     esac
 done
@@ -435,7 +457,7 @@ spec:
   backend_service: nfs.$FSNAME
   frontend_port: $NFS_INGRESS_FPORT
   monitor_port: $NFS_INGRESS_MPORT
-  virtual_ip: $IP/24"
+  virtual_ip: $VIP/24"
 EOF
 fi
 
@@ -450,7 +472,7 @@ spec:
   backend_service: rgw.default
   frontend_port: $RGW_INGRESS_FPORT
   monitor_port: $RGW_INGRESS_MPORT
-  virtual_ip: $IP/24"
+  virtual_ip: $VIP/24"
 EOF
 fi
 
@@ -460,6 +482,9 @@ for key_name in "${KEYS[@]}"; do
     echo "Processing key $key_name"
     create_keys "$key_name"
 done
+
+# customize container images (e.g., ingress)
+set_container_images
 
 # add more services
 process_services
