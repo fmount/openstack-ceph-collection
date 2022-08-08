@@ -1,17 +1,14 @@
 parameters:
- nodes: 3
- pool: default
- network: default
- domain: cephlab.local
- prefix: ceph
- numcpus: 2
- memory: 4096
- image: centos8
- notify: false
- admin_password: iamgroot
- disks:
-   - size: 10
-   - size: 10
+  nodes: 3
+  pool: default
+  network: default
+  domain: cephlab.local
+  prefix: ceph
+  numcpus: 2
+  memory: 4096
+  image: centos8stream
+  notify: false
+  admin_password: iamgroot
 
 {% for number in range(0, nodes) %}
 {{ prefix }}-node-0{{ number }}:
@@ -23,10 +20,11 @@ parameters:
  domain: {{ domain }}
  nets:
   - {{ network }}
- disks: {{ disks }}
+ disks:
+   - size: 10
+   - size: 10
  pool: {{ pool }}
  cmds:
- - yum -y install python3 chrony lvm2 podman vim jq tmux
  - sed -i "s/SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
  - setenforce 0
  - echo {{ admin_password  }} | passwd --stdin root

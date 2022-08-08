@@ -8,6 +8,7 @@ for each OpenStack and Ceph cycle.
 | Wallaby      | Octopus/Pacific|
 | Xena         | Pacific        |
 | Yoga         | Pacific        |
+| Zed          | Quincy         |
 
 
 ## Deploy a TripleO lab

@@ -1,3 +1,4 @@
 cephadm_deploy/inventory.yaml
+cephadm_deploy/inventory.sample
 cephadm_deploy/vars/cephadm-extra-vars.yaml
 *.log
