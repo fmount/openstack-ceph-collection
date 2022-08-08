@@ -7,12 +7,12 @@ LVIRT_IMAGES=/var/lib/libvirt/images
 LVIRT_RUN=/var/run/libvirt
 KCLI="karmab/kcli"
 DEPLOYER="$PODMAN run --net host -it --rm --security-opt label=disable -v $HOME/.kcli:/root/.kcli -v $HOME/.ssh:/root/.ssh -v $LVIRT_IMAGES:/var/lib/libvirt/images -v $LVIRT_RUN:/var/run/libvirt -v $PWD:/workdir -v /var/tmp:/ignitiondir $KCLI"
-DEFAULT_PLAN_PATH=nodes/ceph_cluster.yml
+DEFAULT_PLAN_PATH=plan/ceph_cluster.yml
 DEFAULT_SSH_KEY="$HOME"/.ssh/kcli.pub
 INVENTORY="$PWD"/inventory.yaml
 VARS="$PWD"/vars/cephadm-extra-vars.yaml
 CRUSH_HIERARCHY="$PWD"/vars/cephadm-crush-hierarchy.yaml
-SLEEP=20
+SLEEP=30
 build=0
 s_logs=1
 
@@ -61,6 +61,7 @@ run_cephadm() {
     echo "[CEPHADM] Running cephadm playbook"
 
     ansible-playbook -i "$INVENTORY" cli-cephadm.yaml -e @"$VARS" -e @"$CRUSH_HIERARCHY" 2>&1 | tee cephadm_command.log
+    # ansible-playbook -i "$INVENTORY" cli-cephadm.yaml -e @"$VARS" 2>&1 | tee cephadm_command.log
 
 }
 
