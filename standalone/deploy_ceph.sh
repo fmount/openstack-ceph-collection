@@ -10,7 +10,7 @@ REQUIREMENTS=("jq" "lvm" "python3")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v16.2.7'}
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v17.2.3'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
@@ -70,16 +70,8 @@ SHARED_OPT=""
 #   - install cephadm from centos storage sig
 
 
-function ceph_repo() {
-    echo "[centos-ceph-pacific]
-    name=centos-ceph-pacific
-    baseurl=http://mirror.centos.org/centos/8/storage/x86_64/ceph-pacific/
-    gpgcheck=0
-    enabled=1" > /etc/yum.repos.d/pacific.repo
-}
-
 function install_cephadm() {
-    curl -O https://raw.githubusercontent.com/ceph/ceph/pacific/src/cephadm/cephadm
+    curl -O https://raw.githubusercontent.com/ceph/ceph/quincy/src/cephadm/cephadm
     $SUDO mv cephadm $TARGET_BIN
     $SUDO chmod +x $TARGET_BIN/cephadm
     echo "[INSTALL CEPHADM] cephadm is ready"
