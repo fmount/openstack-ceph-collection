@@ -1,0 +1,128 @@
+apiVersion: core.***REMOVED***.org/v1beta1
+kind: OpenStackControlPlane
+metadata:
+  name: ***REMOVED***
+spec:
+  secret: osp-secret
+  storageClass: local-storage
+  keystoneTemplate:
+    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-keystone:current-tripleo
+    databaseInstance: ***REMOVED***
+  mariadbTemplate:
+    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-mariadb:current-tripleo
+    storageRequest: 500M
+  rabbitmqTemplate:
+    replicas: 1
+    #resources:
+    #  requests:
+    #    cpu: 500m
+    #    memory: 1Gi
+    #  limits:
+    #    cpu: 800m
+    #    memory: 1Gi
+  placementTemplate:
+    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-placement-api:current-tripleo
+  glanceTemplate:
+    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-glance-api:current-tripleo
+    storageClass: local-storage
+    storageRequest: 1G
+    customServiceConfig: |
+      [DEFAULT]
+      enabled_backends=default_backend:rbd
+      [glance_store]
+      default_backend=default_backend
+      [default_backend]
+      rbd_store_ceph_conf=/etc/ceph/ceph.conf
+      rbd_store_user=***REMOVED***
+      rbd_store_pool=images
+      store_description=Ceph glance store backend.
+  cinderTemplate:
+    cinderAPI:
+      replicas: 1
+      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-api:current-tripleo
+    cinderScheduler:
+      replicas: 1
+      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-scheduler:current-tripleo
+    cinderBackup:
+      replicas: 1
+      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-backup:current-tripleo
+      customServiceConfig: |
+        [DEFAULT]
+        backup_driver = cinder.backup.drivers.ceph.CephBackupDriver
+        backup_ceph_pool = backups
+        backup_ceph_user = admin
+      debug:
+        initContainer: false
+        service: false
+    cinderVolumes:
+      volume1:
+        containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-volume:current-tripleo
+        replicas: 1
+        customServiceConfig: |
+          [DEFAULT]
+          transport_url=rabbit://***REMOVED***:***REMOVED***@rabbitmq.***REMOVED***.svc:5672
+          enabled_backends=ceph
+          [ceph]
+          volume_backend_name=ceph
+          volume_driver=cinder.volume.drivers.rbd.RBDDriver
+          rbd_ceph_conf=/etc/ceph/ceph.conf
+          rbd_user=***REMOVED***
+          rbd_pool=volumes
+          rbd_flatten_volume_from_snapshot=False
+          rbd_secret_uuid=4b5c8c0a-ff60-454b-a1b4-9747aa737d19
+        debug:
+          initContainer: false
+          service: false
+      volume2:
+        containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-volume:current-tripleo
+        replicas: 1
+        customServiceConfig: |
+          [DEFAULT]
+          transport_url=rabbit://***REMOVED***:***REMOVED***@rabbitmq.***REMOVED***.svc:5672
+          enabled_backends=ceph
+          [ceph]
+          volume_backend_name=ceph
+          volume_driver=cinder.volume.drivers.rbd.RBDDriver
+          rbd_ceph_conf=/etc/ceph/central.conf
+          rbd_user=automation-10
+          rbd_pool=automation-volumes
+          rbd_flatten_volume_from_snapshot=False
+          rbd_secret_uuid=cdf24729-bd06-46c2-ba47-7018ae220197
+        debug:
+          initContainer: false
+          service: false
+  extraMounts:
+    - name: v1
+      region: r1
+      extraVol:
+      - propagation:
+        - Glance
+        - volume1
+        - Compute
+        extraVolType: Ceph
+        volumes:
+        - name: ceph
+          projected:
+            sources:
+            - secret:
+                name: ceph-client-conf
+            - secret:
+                name: ceph-client-conf2
+        mounts:
+        - name: ceph
+          mountPath: "/etc/ceph"
+          readOnly: true
+      - propagation:
+        - CinderBackup
+        - Compute
+        extraVolType: Ceph
+        volumes:
+        - name: ceph2
+          projected:
+            sources:
+            - secret:
+                name: ceph-client-conf
+        mounts:
+        - name: ceph2
+          mountPath: "/etc/ceph2"
+          readOnly: true
