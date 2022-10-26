@@ -1,0 +1,29 @@
+kind: AnsibleEE
+metadata:
+  name: ansibleee-extravolumes
+  namespace: ***REMOVED***
+spec:
+  # We can specify either playbook, which will run with default ansible-runner options,
+  # or args, which allows specify the whole command that we want to execute
+  playbook: "test.yaml"
+  # args: ["ansible-runner", "run", "/runner", "-vvv", "-p", "test.yaml"]
+  image: "quay.io/jlarriba/***REMOVED***-tripleo-ansible-ee"
+  inventory: |
+          all:
+            hosts:
+              localhost
+  extraMounts:
+    - propagation:
+      - Nova
+      extraVolType: Ceph
+      volumes:
+      - name: ceph
+        secret:
+          secretName: ceph-client-conf
+      mounts:
+      - name: ceph
+        mountPath: "/etc/ceph"
+        readOnly: true
+  configs:
+    - name: swift-configmap
+      mountpath: /runner/configs/swift-configmap
