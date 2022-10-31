@@ -21,7 +21,7 @@ Assumptions:
 
 ## Propagation
 
-'''
+~~~
   extraMounts:
       extraVol: ---> /etc/ceph
       - propagation:
@@ -37,7 +37,7 @@ Assumptions:
         - Glance
         ...
         ...
-'''
+~~~
 
 ## Summary:
 
