@@ -118,25 +118,3 @@ function test_glance {
     sleep 5
     ***REMOVED*** image list
 }
-
-# screencast rec0
-function test_propagation {
-    local mountpoint="$1"
-    if [ -z "$mountpoint" ]; then
-        echo "test_propagation <mountpoint>"
-        echo "  |-> e.g., test_propagation /etc/ceph"
-        return
-    fi
-    # ExtraVolumes summary
-    extra_volumes_preview
-    # Glance pods
-    pod=$(oc get pods | awk '/glance-[[:digit:]]+/ {print $1}')
-    oc exec -it $pod -- ls $mountpoint
-    # Cinder pods
-    pod=$(oc get pods | awk '/cinder-[[:digit:]]+/ {print $1}')
-    oc exec -it $pod -- ls $mountpoint
-    # Compute pods
-    pod=$(oc get pods | awk '/ansible/ {print $1}')
-    oc exec -it $pod -- ls $mountpoint
-
-}
