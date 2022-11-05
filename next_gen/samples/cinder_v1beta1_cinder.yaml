@@ -8,7 +8,7 @@ spec:
   customServiceConfig: |
     [DEFAULT]
     debug = true
-    transport_url=rabbit://***REMOVED***:***REMOVED***@rabbitmq.***REMOVED***.svc:5672
+    transport_url=rabbit://<user>:<psw>@rabbitmq.***REMOVED***.svc:5672
   databaseInstance: ***REMOVED***
   databaseUser: cinder
   cinderAPI:
