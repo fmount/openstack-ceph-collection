@@ -4,24 +4,35 @@ WORKDIR=$HOME/devnull/osp-k8s-operators/dev_operator
 SRC=$HOME/devnull/osp-k8s-operators/dev_operator/lib-common
 GOROOT_DIR=/usr/lib/go/src/
 
-OPENSTACK=/usr/bin/***REMOVED***
+OPENSTACK=/usr/bin/openstack
 SAMPLES=$WORKDIR/samples
 
 # An old workaround to include lib-common for not pushed changes
+# This is still valid for multiple lib-common includes in go.mod
 function sync_lib_common {
   sudo cp -R $SRC $GOROOT_DIR
 }
 
 function link_operator {
+    local libcommon="github.com/openstack-k8s-operators/lib-common/modules/storage v0.0.0-00010101000000-000000000000"
     local OPERATOR_NAME=$1
     if [ -z "$OPERATOR_NAME" ]; then
         echo "link_operator <operator_name>"
     else
-        ln -s $WORKDIR/$OPERATOR_NAME  $WORKDIR/***REMOVED***-operator/tmp/$OPERATOR_NAME
+        echo "Linking operator $OPERATOR_NAME to $PWD/tmp"
+        mkdir -p $PWD/tmp
+        ln -s $WORKDIR/$OPERATOR_NAME  ./tmp/$OPERATOR_NAME
+
+        # Update go.mod
+        if [[ "$OPERATOR_NAME" == "lib-common" ]]; then
+            sed -i $'/require/{a\tgithub.com/openstack-k8s-operators/lib-common/modules/storage v0.0.0-00010101000000-000000000000\n:a;n;ba}' go.mod
+            go mod edit -replace github.com/openstack-k8s-operators/$OPERATOR_NAME/modules/storage=./tmp/$OPERATOR_NAME/modules/storage
+        else
+            go mod edit -replace github.com/openstack-k8s-operators/$OPERATOR_NAME/api=./tmp/$OPERATOR_NAME/api
+        fi
     fi
-    pushd $WORKDIR/***REMOVED***-operator
-    go mod edit -replace github.com/***REMOVED***-k8s-operators/$OPERATOR_NAME/api=./tmp/$OPERATOR_NAME/api
-    popd
+    go mod tidy
+
 }
 
 function crd_del {
@@ -70,7 +81,7 @@ function clean_pv {
       echo "Unable to determine node name with 'oc' command."
       exit 1
     fi
-    oc debug $NODE_NAME -T -- chroot /host /usr/bin/bash -c "for i in {1..6}; do echo \"deleting dir content /mnt/***REMOVED***/pv00\$i\"; rm -rf /mnt/***REMOVED***/pv00\$i/*; done"
+    oc debug $NODE_NAME -T -- chroot /host /usr/bin/bash -c "for i in {1..6}; do echo \"deleting dir content /mnt/openstack/pv00\$i\"; rm -rf /mnt/openstack/pv00\$i/*; done"
 
 }
 
@@ -86,12 +97,12 @@ function endpoint_create {
         svc="cinderv3"
     fi
     for ep in admin internal public; do
-        $OPENSTACK endpoint create --region $region $svc $ep "http://$service-$ep-***REMOVED***.apps-crc.testing/$path";
+        $OPENSTACK endpoint create --region $region $svc $ep "http://$service-$ep-openstack.apps-crc.testing/$path";
     done
 }
 
 function scale_operators {
-    for op in ***REMOVED*** cinder glance placement; do
+    for op in openstack cinder glance placement; do
         oc scale deployment $op-operator-controller-manager --replicas=0
     done
 }
@@ -114,7 +125,25 @@ function test_cinder {
 
 function test_glance {
     IMAGE=$SAMPLES/cirros-0.5.2-x86_64-disk.img
-    ***REMOVED*** image create --disk-format qcow2 --container-format bare --file $IMAGE cirros-test
+    openstack image create --disk-format qcow2 --container-format bare --file $IMAGE cirros-test
     sleep 5
-    ***REMOVED*** image list
+    openstack image list
+    openstack delete cirros-test
+}
+
+function test_glance_policies {
+    echo "Building projects and users"
+    openstack project create --description 'project a' project-a --domain default
+    openstack project create --description 'project b' project-b --domain default
+    openstack user create project-a-reader --password project-a-reader
+    openstack user create project-b-reader --password project-b-reader
+    openstack user create project-a-member --password project-a-member
+    openstack user create project-b-member --password project-b-member
+
+    echo "Building projects and users"
+    openstack role add --user project-a-member --project project-a member
+    openstack role add --user project-a-reader --project project-a reader
+
+    openstack role add --user project-b-member --project project-b member
+    openstack role add --user project-b-reader --project project-b reader
 }

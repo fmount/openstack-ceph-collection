@@ -3,14 +3,14 @@
 ## Context
 
 In Victoria the new default is for Metalsmith to
-[provision baremetal before the overcloud deploy](https://docs.***REMOVED***.org/project-deploy-guide/tripleo-docs/latest/provisioning/baremetal_provision.html).
+[provision baremetal before the overcloud deploy](https://docs.openstack.org/project-deploy-guide/tripleo-docs/latest/provisioning/baremetal_provision.html).
 
 Using [tripleo-lab](../tripleo-lab) like this:
 
 `ansible-playbook builder.yaml -t domains -t baremetal -t vbmc`
 
 will result in tripleo-lab using the tripleo-operator-ansible role
-[tripleo_overcloud_node_provision](https://opendev.org/***REMOVED***/tripleo-operator-ansible/src/branch/master/roles/tripleo_overcloud_node_provision)
+[tripleo_overcloud_node_provision](https://opendev.org/openstack/tripleo-operator-ansible/src/branch/master/roles/tripleo_overcloud_node_provision)
 to install an OS and assign an IP to every node planned for the
 overcloud. This is a different way of working as I'm used to having
 introspected nodes, not deployed nodes, when I first login to the
@@ -19,7 +19,7 @@ undercloud.
 ## SSH'ing into the provisioned nodes
 
 After you login to your undercloud for the first time source the stackrc
-and run `metalsmith list` the way you used to run `***REMOVED*** server list`.
+and run `metalsmith list` the way you used to run `openstack server list`.
 
 ```
 (undercloud) [CentOS-8.1 - stack@undercloud ~]$ metalsmith -c "Node Name" -c "IP Addresses" list
@@ -72,14 +72,14 @@ parameter_defaults:
 You can do your overcloud deployment by passing this file like this:
 
 ```
-***REMOVED*** overcloud deploy \
-  -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/deployed-server-environment.yaml \
+openstack overcloud deploy \
+  -e /usr/share/openstack-tripleo-heat-templates/environments/deployed-server-environment.yaml \
   -e ~/overcloud-baremetal-deployed-0.yaml \
   --deployed-server \
   ...
 ```
 
-and you'll basically be [Using Already Deployed Servers](https://docs.***REMOVED***.org/project-deploy-guide/tripleo-docs/latest/features/deployed_server.html) which will become the new default.
+and you'll basically be [Using Already Deployed Servers](https://docs.openstack.org/project-deploy-guide/tripleo-docs/latest/features/deployed_server.html) which will become the new default.
 
 ## Unprovisioning
 
@@ -87,7 +87,7 @@ You don't have to use what tripleo-lab stood up for you. You can just
 shut all those nodes down like this:
 
 ```
-***REMOVED*** overcloud node unprovision --all \
+openstack overcloud node unprovision --all \
   --stack oc0 \
   ~/metalsmith-0.yaml
 ```
@@ -104,11 +104,11 @@ Because tripleo-lab does this for you the first time I'm taking note
 of it here:
 
 ```
-***REMOVED*** overcloud node provision \
+openstack overcloud node provision \
   --stack oc0 \
   --output ~/overcloud-baremetal-deployed-0-new.yaml \
   ~/metalsmith-0.yaml
 ```
 
-All of this is from the [existing docs](https://docs.***REMOVED***.org/project-deploy-guide/tripleo-docs/latest/provisioning/baremetal_provision.html)
+All of this is from the [existing docs](https://docs.openstack.org/project-deploy-guide/tripleo-docs/latest/provisioning/baremetal_provision.html)
 but just put into the context of what I find when using tripleo-lab.

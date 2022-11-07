@@ -1,13 +1,13 @@
 kind: AnsibleEE
 metadata:
   name: ansibleee-extravolumes
-  namespace: ***REMOVED***
+  namespace: openstack
 spec:
   # We can specify either playbook, which will run with default ansible-runner options,
   # or args, which allows specify the whole command that we want to execute
   playbook: "test.yaml"
   # args: ["ansible-runner", "run", "/runner", "-vvv", "-p", "test.yaml"]
-  image: "quay.io/jlarriba/***REMOVED***-tripleo-ansible-ee"
+  image: "quay.io/jlarriba/openstack-tripleo-ansible-ee"
   inventory: |
           all:
             hosts:

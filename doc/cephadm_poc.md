@@ -21,7 +21,7 @@ Here the steps needed to build a POC based on cephadm/orchestrator.
 
 ```console
     export STACK=oc0
-    ***REMOVED*** overcloud node provision \
+    openstack overcloud node provision \
       --stack $STACK \
       --output ~/overcloud-baremetal-deployed-0.yaml \
       ~/metalsmith-0.yaml
@@ -35,23 +35,23 @@ Additional info can be found [here](https://github.com/fultonj/victoria/tree/mas
 3. Overcloud deploy --stack-only
 
 ```console
-    export DEPLOY_TEMPLATES=/usr/share/***REMOVED***-tripleo-heat-templates/
+    export DEPLOY_TEMPLATES=/usr/share/openstack-tripleo-heat-templates/
     export DEPLOY_STACK=oc0
     export DEPLOY_TIMEOUT_ARG=90
     export DEPLOY_LIBVIRT_TYPE=qemu
     export DEPLOY_NETWORKS_FILE=/home/stack/oc0-network-data.yaml
     source /home/stack/stackrc;
-    ***REMOVED*** overcloud deploy --templates $DEPLOY_TEMPLATES --stack $DEPLOY_STACK --timeout $DEPLOY_TIMEOUT_ARG \
-    --libvirt-type $DEPLOY_LIBVIRT_TYPE -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/deployed-server-environment.yaml \
+    openstack overcloud deploy --templates $DEPLOY_TEMPLATES --stack $DEPLOY_STACK --timeout $DEPLOY_TIMEOUT_ARG \
+    --libvirt-type $DEPLOY_LIBVIRT_TYPE -e /usr/share/openstack-tripleo-heat-templates/environments/deployed-server-environment.yaml \
     -e /home/stack/overcloud-baremetal-deployed-0.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/net-multiple-nics.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/network-isolation.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/network-environment.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/disable-telemetry.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/low-memory-usage.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/enable-swap.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
-    -e /usr/share/***REMOVED***-tripleo-heat-templates/environments/podman.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/net-multiple-nics.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/network-environment.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/disable-telemetry.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/low-memory-usage.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/enable-swap.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/ceph-ansible/ceph-ansible.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/podman.yaml \
     -e /home/stack/containers-prepare-parameter.yaml \
     -e /home/stack/generated-container-prepare.yaml \
     --environment-directory /home/stack/overcloud-0-yml \
@@ -63,7 +63,7 @@ Additional info can be found [here](https://github.com/fultonj/victoria/tree/mas
 ```console
      export STACK=oc0
      export DIR=/home/stack/oc0/config-download
-     ***REMOVED*** overcloud config download \
+     openstack overcloud config download \
               --name $STACK \
               --config-dir $DIR
 ```

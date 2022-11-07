@@ -39,7 +39,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: ceph_pool
-author: Guillaume Abrioux <gabrioux@***REMOVED***.com>
+author: Guillaume Abrioux <gabrioux@redhat.com>
 short_description: Manage Ceph Pools
 version_added: "2.8"
 description:
