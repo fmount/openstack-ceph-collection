@@ -39,7 +39,7 @@ ANSIBLE_METADATA = {
 DOCUMENTATION = """
 ---
 module: ceph_key
-author: Sebastien Han <seb@***REMOVED***.com>
+author: Sebastien Han <seb@redhat.com>
 short_description: Manage Cephx key(s)
 version_added: "2.6"
 notes: []

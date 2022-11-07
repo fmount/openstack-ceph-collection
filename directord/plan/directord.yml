@@ -2,7 +2,7 @@ parameters:
  nodes: 2
  pool: default
  network: default
- domain: ***REMOVED***.local
+ domain: openstack.local
  prefix: directord
  numcpus: 4
  memory: 8192

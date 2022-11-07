@@ -14,7 +14,7 @@ CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v17.2.3'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
-KEYS=("client.***REMOVED***") # at least the client.***REMOVED*** default key should be created
+KEYS=("client.openstack") # at least the client.openstack default key should be created
 KEY_EXPORT_DIR="/etc/ceph"
 # DEVICES=("/dev/ceph_vg/ceph_lv_data")
 # SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
@@ -289,7 +289,7 @@ function usage() {
     echo "> $0 -i IP -p volumes -p images:rbd"
     echo
     echo "4. Deploy the Ceph cluster and add the specified keys"
-    echo "> $0 -i IP -k client.***REMOVED*** -k client.manila -k client.glance"
+    echo "> $0 -i IP -k client.openstack -k client.manila -k client.glance"
     echo
     echo "5. Deploy the Ceph cluster and add the specified services"
     echo

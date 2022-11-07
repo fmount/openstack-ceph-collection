@@ -41,7 +41,7 @@ Examples
 > ./deploy_ceph.sh -i \<IP\> -p volumes -p images:rbd
 
 4. Deploy the Ceph cluster and add the specified keys
-> ./deploy_ceph.sh -i \<IP\> -k client.***REMOVED*** -k client.manila -k client.glance
+> ./deploy_ceph.sh -i \<IP\> -k client.openstack -k client.manila -k client.glance
 
 5. Deploy the Ceph cluster and add the specified services
 > ./deploy_ceph.sh -i \<IP\> -s rgw -s mds -s nfs
@@ -54,4 +54,4 @@ Examples
 
 **A real use case Example**:
 
-> ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -p images -k client.***REMOVED*** -k client.glance -k client.manila -s rgw -s nfs -s mds -d /dev/vdb
+> ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 -p volumes:rbd -p images -k client.openstack -k client.glance -k client.manila -s rgw -s nfs -s mds -d /dev/vdb

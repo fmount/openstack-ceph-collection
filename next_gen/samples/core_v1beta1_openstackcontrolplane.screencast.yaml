@@ -1,15 +1,15 @@
-apiVersion: core.***REMOVED***.org/v1beta1
+apiVersion: core.openstack.org/v1beta1
 kind: OpenStackControlPlane
 metadata:
-  name: ***REMOVED***
+  name: openstack
 spec:
   secret: osp-secret
   storageClass: local-storage
   keystoneTemplate:
-    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-keystone:current-tripleo
-    databaseInstance: ***REMOVED***
+    containerImage: quay.io/tripleowallabycentos9/openstack-keystone:current-tripleo
+    databaseInstance: openstack
   mariadbTemplate:
-    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-mariadb:current-tripleo
+    containerImage: quay.io/tripleowallabycentos9/openstack-mariadb:current-tripleo
     storageRequest: 500M
   rabbitmqTemplate:
     replicas: 1
@@ -21,9 +21,9 @@ spec:
     #    cpu: 800m
     #    memory: 1Gi
   #placementTemplate:
-  #  containerImage: quay.io/tripleowallabycentos9/***REMOVED***-placement-api:current-tripleo
+  #  containerImage: quay.io/tripleowallabycentos9/openstack-placement-api:current-tripleo
   ansibleTemplate:
-    containerImage: "quay.io/jlarriba/***REMOVED***-tripleo-ansible-ee"
+    containerImage: "quay.io/jlarriba/openstack-tripleo-ansible-ee"
     playbook: "test.yaml"
     inventory: |
       all:
@@ -37,7 +37,7 @@ spec:
     - name: test-configmap-2
       mountpath: /runner/configs/test-configmap-2
   glanceTemplate:
-    containerImage: quay.io/tripleowallabycentos9/***REMOVED***-glance-api:current-tripleo
+    containerImage: quay.io/tripleowallabycentos9/openstack-glance-api:current-tripleo
     storageClass: local-storage
     storageRequest: 1G
     customServiceConfig: |
@@ -47,24 +47,24 @@ spec:
       default_backend=default_backend
       [default_backend]
       rbd_store_ceph_conf=/etc/ceph/ceph.conf
-      rbd_store_user=***REMOVED***
+      rbd_store_user=openstack
       rbd_store_pool=images
       store_description=Ceph glance store backend.
       [ceph1]
       rbd_store_ceph_conf=/etc/ceph2/ceph.conf
-      rbd_store_user=***REMOVED***
+      rbd_store_user=openstack
       rbd_store_pool=images
       store_description=Ceph glance store backend.
   cinderTemplate:
     cinderAPI:
       replicas: 1
-      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-api:current-tripleo
+      containerImage: quay.io/tripleowallabycentos9/openstack-cinder-api:current-tripleo
     cinderScheduler:
       replicas: 1
-      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-scheduler:current-tripleo
+      containerImage: quay.io/tripleowallabycentos9/openstack-cinder-scheduler:current-tripleo
     cinderBackup:
       replicas: 1
-      containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-backup:current-tripleo
+      containerImage: quay.io/tripleowallabycentos9/openstack-cinder-backup:current-tripleo
       customServiceConfig: |
         [DEFAULT]
         backup_driver = cinder.backup.drivers.ceph.CephBackupDriver
@@ -75,17 +75,17 @@ spec:
         service: false
     cinderVolumes:
       volume1:
-        containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-volume:current-tripleo
+        containerImage: quay.io/tripleowallabycentos9/openstack-cinder-volume:current-tripleo
         replicas: 1
         customServiceConfig: |
           [DEFAULT]
-          transport_url=rabbit://***REMOVED***:***REMOVED***@rabbitmq.***REMOVED***.svc:5672
+          transport_url=rabbit://openstack:redhat@rabbitmq.openstack.svc:5672
           enabled_backends=ceph
           [ceph]
           volume_backend_name=ceph
           volume_driver=cinder.volume.drivers.rbd.RBDDriver
           rbd_ceph_conf=/etc/ceph/ceph.conf
-          rbd_user=***REMOVED***
+          rbd_user=openstack
           rbd_pool=volumes
           rbd_flatten_volume_from_snapshot=False
           rbd_secret_uuid=4b5c8c0a-ff60-454b-a1b4-9747aa737d19
@@ -93,17 +93,17 @@ spec:
           initContainer: false
           service: false
       #volume2:
-      #  containerImage: quay.io/tripleowallabycentos9/***REMOVED***-cinder-volume:current-tripleo
+      #  containerImage: quay.io/tripleowallabycentos9/openstack-cinder-volume:current-tripleo
       #  replicas: 1
       #  customServiceConfig: |
       #    [DEFAULT]
-      #    transport_url=rabbit://***REMOVED***:***REMOVED***@rabbitmq.***REMOVED***.svc:5672
+      #    transport_url=rabbit://openstack:redhat@rabbitmq.openstack.svc:5672
       #    enabled_backends=ceph
       #    [ceph]
       #    volume_backend_name=ceph
       #    volume_driver=cinder.volume.drivers.rbd.RBDDriver
       #    rbd_ceph_conf=/etc/ceph2/ceph.conf
-      #    rbd_user=***REMOVED***
+      #    rbd_user=openstack
       #    rbd_pool=volumes
       #    rbd_flatten_volume_from_snapshot=False
       #    rbd_secret_uuid=4b5c8c0a-ff60-454b-a1b4-9747aa737d19

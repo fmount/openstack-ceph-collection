@@ -11,16 +11,16 @@ def parse_opts(argv):
     parser.add_argument('-m', '--deployed-metal-file', metavar='METAL',
                         help=("Relative path to a file like 'deployed-metal.yaml' "
                               "which is genereated by running a command like "
-                              "'***REMOVED*** overcloud node provision ... "
+                              "'openstack overcloud node provision ... "
                               "--output deployed-metal.yaml' "
                               ),
                         required=True)
     parser.add_argument('-r', '--tripleo-roles-file', metavar='ROLES',
                         help=("Relative path to tripleo roles data file. "
                               "Defaults to "
-                              "/usr/share/***REMOVED***-tripleo-heat-templates/roles_data.yaml"
+                              "/usr/share/openstack-tripleo-heat-templates/roles_data.yaml"
                               ),
-                        default='/usr/share/***REMOVED***-tripleo-heat-templates/roles_data.yaml',
+                        default='/usr/share/openstack-tripleo-heat-templates/roles_data.yaml',
                         required=False)
     parser.add_argument('-o', '--ceph-spec-file', metavar='SPEC',
                         help=("Relative path to genereated ceph spec file. "

@@ -1,4 +1,4 @@
-# POC - ***REMOVED***-operator and Extra Volumes propagation
+# POC - openstack-operator and Extra Volumes propagation
 
 Assumptions:
 

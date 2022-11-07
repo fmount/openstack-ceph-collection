@@ -1,15 +1,15 @@
-apiVersion: glance.***REMOVED***.org/v1beta1
+apiVersion: glance.openstack.org/v1beta1
 kind: Glance
 metadata:
   name: glance
 spec:
   serviceUser: glance
-  containerImage: quay.io/tripleowallabycentos9/***REMOVED***-glance-api:current-tripleo
+  containerImage: quay.io/tripleowallabycentos9/openstack-glance-api:current-tripleo
   customServiceConfig: |
     [DEFAULT]
     debug = true
     # todo: add custom glance config for ceph
-  databaseInstance: ***REMOVED***
+  databaseInstance: openstack
   databaseUser: glance
   glanceAPIInternal:
     debug:

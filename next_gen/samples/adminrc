@@ -3,7 +3,7 @@ for key in $( set | awk -F= '/^OS_/ {print $1}' ); do unset "${key}" ; done
 
 export OS_AUTH_TYPE=password
 export OS_PASSWORD=12345678
-export OS_AUTH_URL=http://keystone-public-***REMOVED***.apps-crc.testing
+export OS_AUTH_URL=http://keystone-public-openstack.apps-crc.testing
 export OS_SYSTEM_SCOPE=all
 export OS_USERNAME=admin
 export OS_PROJECT_NAME=admin

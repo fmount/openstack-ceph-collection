@@ -36,10 +36,10 @@ DOCUMENTATION = '''
 module: ceph_spec_bootstrap module
 short_description: Create Ceph Orchestrator specification file based on TripleO parameters
 description:
-    - "The ceph_spec_bootstrap module uses information from both the composed services in TripleO roles and the deployed hosts file ('***REMOVED*** overcloud node provision' output), or just the inventory file (tripleo-ansible-inventory output) to determine what Ceph services should run on what hosts and generate a valid Ceph spec. This allows the desired end state defined in TripleO to be translated into an end state defined in Ceph orchestrator. The intention is to use this module when bootstraping a new Ceph cluster."
+    - "The ceph_spec_bootstrap module uses information from both the composed services in TripleO roles and the deployed hosts file ('openstack overcloud node provision' output), or just the inventory file (tripleo-ansible-inventory output) to determine what Ceph services should run on what hosts and generate a valid Ceph spec. This allows the desired end state defined in TripleO to be translated into an end state defined in Ceph orchestrator. The intention is to use this module when bootstraping a new Ceph cluster."
 options:
     deployed_metalsmith:
-        description: The absolute path to a file like deployed_metal.yaml, as genereated by '***REMOVED*** overcloud node provision --output deployed_metal.yaml'. This file is used to map which ceph_service_types map to which deployed hosts. Use this option if you have deployed servers with metalsmith but do not yet have an inventory genereated from the overcloud in Heat. Either tripleo_ansible_inventory xor deployed_metalsmith must be used (not both).
+        description: The absolute path to a file like deployed_metal.yaml, as genereated by 'openstack overcloud node provision --output deployed_metal.yaml'. This file is used to map which ceph_service_types map to which deployed hosts. Use this option if you have deployed servers with metalsmith but do not yet have an inventory genereated from the overcloud in Heat. Either tripleo_ansible_inventory xor deployed_metalsmith must be used (not both).
         required: False
         type: str
     tripleo_ansible_inventory:
@@ -55,7 +55,7 @@ options:
         required: False
         type: list
     tripleo_roles:
-        description: The absolute path to the TripleO roles file. Only necessary if deployed_metalsmith is used. If not provided then defaults to /usr/share/***REMOVED***-tripleo-heat-templates/roles_data.yaml. This file is used to map which ceph_service_types map to which roles. E.g. all roles with OS::TripleO::Services::CephOSD will get the Ceph service_type 'osd'. This paramter is ignored if tripleo_ansible_inventory is used.
+        description: The absolute path to the TripleO roles file. Only necessary if deployed_metalsmith is used. If not provided then defaults to /usr/share/openstack-tripleo-heat-templates/roles_data.yaml. This file is used to map which ceph_service_types map to which roles. E.g. all roles with OS::TripleO::Services::CephOSD will get the Ceph service_type 'osd'. This paramter is ignored if tripleo_ansible_inventory is used.
         required: False
         type: str
     osd_spec:
@@ -75,7 +75,7 @@ author:
 '''
 
 EXAMPLES = '''
-- name: make spec from '***REMOVED*** overcloud node provision' output
+- name: make spec from 'openstack overcloud node provision' output
   ceph_spec_bootstrap:
     new_ceph_spec: "{{ playbook_dir }}/ceph_spec.yaml"
     deployed_metalsmith: ~/overcloud-baremetal-deployed.yaml
@@ -413,7 +413,7 @@ def main():
     if new_ceph_spec is None:
         new_ceph_spec = "/home/stack/ceph_spec.yaml"
     if tripleo_roles is None:
-        tripleo_roles = "/usr/share/***REMOVED***-tripleo-heat-templates/roles_data.yaml"
+        tripleo_roles = "/usr/share/openstack-tripleo-heat-templates/roles_data.yaml"
     if osd_spec is None:
         osd_spec = {}
     if fqdn is None:

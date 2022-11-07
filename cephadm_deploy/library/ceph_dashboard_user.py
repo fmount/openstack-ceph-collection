@@ -82,7 +82,7 @@ options:
     default: []
 
 author:
-    - Dimitri Savineau <dsavinea@***REMOVED***.com>
+    - Dimitri Savineau <dsavinea@redhat.com>
 """
 
 EXAMPLES = '''

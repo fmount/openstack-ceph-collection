@@ -91,7 +91,7 @@ options:
     required: false
     type: str
 author:
-  - Dimitri Savineau <dsavinea@***REMOVED***.com>
+  - Dimitri Savineau <dsavinea@redhat.com>
 """
 
 EXAMPLES = '''

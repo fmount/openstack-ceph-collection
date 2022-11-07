@@ -83,7 +83,7 @@ options:
     required: false
 
 author:
-    - Dimitri Savineau <dsavinea@***REMOVED***.com>
+    - Dimitri Savineau <dsavinea@redhat.com>
 """
 
 EXAMPLES = '''
