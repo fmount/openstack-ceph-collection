@@ -6,6 +6,23 @@ GOROOT_DIR=/usr/lib/go/src/
 
 OPENSTACK=/usr/bin/openstack
 SAMPLES=$WORKDIR/samples
+CRC_BIN=/usr/local/bin/crc
+KUBEADMIN_PWD=${KUBEADMIN_PWD:-"12345678"}
+PULL_SECRET_FILE=${PULL_SECRET_FILE:-$HOME"/.ssh/pull_secret"}
+
+function crc_setup {
+    crc config set consent-telemetry no
+    ${CRC_BIN} config set consent-telemetry no
+    ${CRC_BIN} config set kubeadmin-password ${KUBEADMIN_PWD}
+    ${CRC_BIN} config set pull-secret-file ${PULL_SECRET_FILE}
+    # Executing systemctl action failed:  exit status 1: Failed to connect to bus: No such file or directory
+    # https://github.com/code-ready/crc/issues/2674
+    crc config set skip-check-daemon-systemd-unit true
+    crc config set skip-check-daemon-systemd-sockets true
+    crc config set cpus 10
+    crc config set memory 20480
+    ${CRC_BIN} setup
+}
 
 # An old workaround to include lib-common for not pushed changes
 # This is still valid for multiple lib-common includes in go.mod
@@ -48,7 +65,7 @@ function crd {
         echo "crd $ACTION <operator_name>"
     else
         # stat operator_name path first ?
-        for i in $WORKDIR/$OPERATOR_NAME-operator/config/crd/bases/*; {
+        for i in $WORKDIR/$OPERATOR_NAME-operator/config/crd/bases/* ; {
             oc $ACTION -f $i;
         }
     fi
@@ -102,7 +119,7 @@ function endpoint_create {
 }
 
 function scale_operators {
-    for op in openstack cinder glance placement; do
+    for op in openstack cinder glance placement ovn ovs nova; do
         oc scale deployment $op-operator-controller-manager --replicas=0
     done
 }
@@ -146,4 +163,24 @@ function test_glance_policies {
 
     openstack role add --user project-b-member --project project-b member
     openstack role add --user project-b-reader --project project-b reader
+}
+
+function remove_finalizers {
+    for i in $(oc get keystoneendpoint -o name); do oc patch $i --type json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'; done; for i in $(oc get keystoneservice -o name); do oc patch $i --type json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'; done
+}
+
+function delete_completed {
+    NS="openstack"
+    oc delete pod --field-selector=status.phase==Succeeded -n $NS
+}
+
+function build_external_ceph_crc {
+    ceph_script=$1
+    scp -i ~/.crc/machines/crc/id_ecdsa "$ceph_script" core@"$(crc ip)":/var/home/core
+    ssh -i ~/.crc/machines/crc/id_ecdsa core@"$(crc ip)" chmod +x /var/home/core/$(basename $ceph_script)
+    ssh -i ~/.crc/machines/crc/id_ecdsa core@"$(crc ip)" sh /var/home/core/$(basename $ceph_script)
+}
+
+function crc_ssh {
+    ssh -i ~/.crc/machines/crc/id_ecdsa core@"$(crc ip)"
 }
