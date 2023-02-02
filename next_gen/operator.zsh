@@ -2,6 +2,7 @@
 
 WORKDIR=$HOME/devnull/osp-k8s-operators/dev_operator
 SRC=$HOME/devnull/osp-k8s-operators/dev_operator/lib-common
+SNO_WORKDIR=$HOME/devnull/ocp
 GOROOT_DIR=/usr/lib/go/src/
 
 OPENSTACK=/usr/bin/openstack
@@ -22,6 +23,10 @@ function crc_setup {
     crc config set cpus 10
     crc config set memory 20480
     ${CRC_BIN} setup
+}
+
+function crc_ssh {
+    ssh -i ~/.crc/machines/crc/id_ecdsa -0 StrictHostKeyChecking=no core@$(shell crc ip)
 }
 
 # An old workaround to include lib-common for not pushed changes
@@ -183,4 +188,29 @@ function build_external_ceph_crc {
 
 function crc_ssh {
     ssh -i ~/.crc/machines/crc/id_ecdsa core@"$(crc ip)"
+}
+
+function checkout_pr {
+    ID=$1
+    BRANCHNAME="PR#$1"
+
+    if [ -z "$1" ]; then
+        echo "The PR ID must be specified"
+        exit 1
+    fi
+
+    git fetch origin pull/$ID/head:$BRANCHNAME
+}
+
+
+## SNO
+function destroy_cluster {
+    openshift-install destroy cluster --dir $SNO_WORKDIR/clusters/shiftstack
+}
+
+function attach_interface {
+    local net_name="$1"
+    local domain="$2"
+    MAC=$(date +%s | md5sum | head -c 6 | sed -e 's/\([0-9A-Fa-f]\{2\}\)/\1:/g' -e 's/\(.*\):$/\1/' | sed -e 's/^/52:54:00:/')
+    sudo virsh attach-interface --domain $domain --type network --mac ${MAC} --source $net_name --model virtio --config --live
 }
