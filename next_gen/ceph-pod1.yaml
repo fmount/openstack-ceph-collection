@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ceph-run
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ceph-log
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ceph-data
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: local-storage
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ceph
+  namespace: openstack
+  labels:
+    app.kubernetes.io/name: ceph
+spec:
+  hostNetwork: true
+  containers:
+   - image: quay.io/ceph/daemon:latest-quincy
+     name: ceph
+     env:
+     - name: MON_IP
+       value: "192.168.130.11"
+     - name: CEPH_DAEMON
+       value: demo
+     - name: CEPH_PUBLIC_NETWORK
+       value: "0.0.0.0/0"
+     - name: DEMO_DAEMONS
+       value: "osd"
+     volumeMounts:
+      - mountPath: /var/lib/ceph
+        name: ceph-data
+      - mountPath: /var/log/ceph
+        name: ceph-log
+      - mountPath: /run/ceph
+        name: ceph-run
+  volumes:
+  - name: ceph-data
+    persistentVolumeClaim:
+      claimName: ceph-data
+      readOnly: false
+  - name: ceph-run
+    persistentVolumeClaim:
+      claimName: ceph-run
+      readOnly: false
+  - name: ceph-log
+    persistentVolumeClaim:
+      claimName: ceph-log
+      readOnly: false
+  securityContext:
+    privileged: true
+    allowPrivilegeEscalation: true
+    runAsUser: 0

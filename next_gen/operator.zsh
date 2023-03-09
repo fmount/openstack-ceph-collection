@@ -124,9 +124,14 @@ function endpoint_create {
 }
 
 function scale_operators {
-    for op in openstack cinder glance placement ovn ovs nova; do
+    for op in ironic openstack cinder glance placement ovn ovs nova neutron; do
         oc scale deployment $op-operator-controller-manager --replicas=0
     done
+}
+
+function scale_operator {
+    local op="$1"
+    oc scale deployment $op-operator-controller-manager --replicas=0
 }
 
 # TEST OPERATORS
@@ -193,13 +198,18 @@ function crc_ssh {
 function checkout_pr {
     ID=$1
     BRANCHNAME="PR#$1"
+    REMOTE=${REMOTE:-upstream}
 
     if [ -z "$1" ]; then
         echo "The PR ID must be specified"
         exit 1
     fi
 
-    git fetch origin pull/$ID/head:$BRANCHNAME
+    git fetch $REMOTE pull/$ID/head:$BRANCHNAME
+}
+
+function disable_webhooks {
+    oc patch csv openstack-operator.v0.0.1 --type=json -p="[{'op': 'remove', 'path': '/spec/webhookdefinitions'}]"
 }
 
 
@@ -214,3 +224,4 @@ function attach_interface {
     MAC=$(date +%s | md5sum | head -c 6 | sed -e 's/\([0-9A-Fa-f]\{2\}\)/\1:/g' -e 's/\(.*\):$/\1/' | sed -e 's/^/52:54:00:/')
     sudo virsh attach-interface --domain $domain --type network --mac ${MAC} --source $net_name --model virtio --config --live
 }
+
