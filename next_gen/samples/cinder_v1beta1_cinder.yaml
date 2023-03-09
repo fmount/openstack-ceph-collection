@@ -5,10 +5,10 @@ metadata:
   namespace: openstack
 spec:
   serviceUser: cinder
+  rabbitMqClusterName: rabbitmq
   customServiceConfig: |
     [DEFAULT]
     debug = true
-    transport_url=rabbit://<user>:<psw>@rabbitmq.openstack.svc:5672
   databaseInstance: openstack
   databaseUser: cinder
   cinderAPI:
@@ -17,23 +17,52 @@ spec:
   cinderScheduler:
     replicas: 1
     containerImage: quay.io/tripleowallabycentos9/openstack-cinder-scheduler:current-tripleo
+    customServiceConfig: |
+      [DEFAULT]
   cinderBackup:
     replicas: 1
     containerImage: quay.io/tripleowallabycentos9/openstack-cinder-backup:current-tripleo
+    customServiceConfig: |
+      [DEFAULT]
+      backup_driver = cinder.backup.drivers.ceph.CephBackupDriver
+      backup_ceph_pool = backups
+      backup_ceph_user = admin
   secret: osp-secret
   cinderVolumes:
     volume1:
       containerImage: quay.io/tripleowallabycentos9/openstack-cinder-volume:current-tripleo
       replicas: 1
+      customServiceConfig: |
+        [DEFAULT]
+        enabled_backends=ceph
+        [ceph]
+        volume_backend_name=ceph
+        volume_driver=cinder.volume.drivers.rbd.RBDDriver
+        rbd_ceph_conf=/etc/ceph/ceph.conf
+        rbd_user=openstack
+        rbd_pool=volumes
+        rbd_flatten_volume_from_snapshot=False
+        rbd_secret_uuid=4b5c8c0a-ff60-454b-a1b4-9747aa737d19
     volume2:
       containerImage: quay.io/tripleowallabycentos9/openstack-cinder-volume:current-tripleo
       replicas: 1
+      customServiceConfig: |
+        [DEFAULT]
+        enabled_backends=ceph
+        [ceph]
+        volume_backend_name=ceph
+        volume_driver=cinder.volume.drivers.rbd.RBDDriver
+        rbd_ceph_conf=/etc/ceph/ceph.conf
+        rbd_user=openstack
+        rbd_pool=volumes
+        rbd_flatten_volume_from_snapshot=False
+        rbd_secret_uuid=4b5c8c0a-ff60-454b-a1b4-9747aa737d19
   extraMounts:
     - name: v1
       region: r1
       extraVol:
         - propagation:
-          - Cinder
+          - volume1
           extraVolType: Ceph
           volumes:
           - name: ceph
@@ -46,10 +75,10 @@ spec:
           mounts:
           - name: ceph
             mountPath: "/etc/ceph"
-            readOnly: true
+            readOnly: false
         - propagation:
-          - Glance
-          - volume1
+          - volume2
+          - CinderBackup
           extraVolType: Ceph
           volumes:
           - name: ceph2
@@ -59,5 +88,5 @@ spec:
                   name: ceph-client-conf
           mounts:
           - name: ceph2
-            mountPath: "/etc/ceph2"
-            readOnly: true
+            mountPath: "/etc/ceph"
+            readOnly: false
