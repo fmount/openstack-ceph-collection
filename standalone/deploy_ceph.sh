@@ -10,7 +10,7 @@ REQUIREMENTS=("jq" "lvm" "python3")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v17.2.3'}
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v17.2.4'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
@@ -99,7 +99,7 @@ function build_osds_from_list() {
 
 function rgw() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
-        --keyring $KEYRING -- ceph orch apply rgw default default default \
+        --keyring $KEYRING -- ceph orch apply rgw default \
         "--placement=$HOSTNAME count:1" --port "$RGW_PORT"
 
     if [ "$RGW_INGRESS" -eq 1 ]; then
