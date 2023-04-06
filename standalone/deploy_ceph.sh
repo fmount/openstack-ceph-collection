@@ -18,13 +18,13 @@ KEYS=("client.openstack") # at least the client.openstack default key should be 
 KEY_EXPORT_DIR="/etc/ceph"
 # DEVICES=("/dev/ceph_vg/ceph_lv_data")
 # SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
-SLEEP=5
+SLEEP=30
 ATTEMPTS=30
 MIN_OSDS=1
 DEBUG=0
 # NFS OPTIONS
 FSNAME=${FSNAME:-'cephfs'}
-NFS_INGRESS=0
+NFS_INGRESS=1
 NFS_PORT=12345
 NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
@@ -41,9 +41,9 @@ DEFAULT_PGP_NUM=8
 
 # RGW OPTIONS
 RGW_PORT=8080
-RGW_INGRESS=0
-RGW_INGRESS_FPORT=8444
-RGW_INGRESS_MPORT=8445
+RGW_INGRESS=1
+RGW_INGRESS_FPORT=8080
+RGW_INGRESS_MPORT=8999
 RGW_INGRESS_SPEC="rgw_ingress.yml"
 
 # INGRESS CONFIG
@@ -92,7 +92,7 @@ function rm_cluster() {
 function build_osds_from_list() {
     for item in "${DEVICES[@]}"; do
         echo "Creating osd $item on node $HOSTNAME"
-        $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
+        $SUDO $CEPHADM shell --fsid $FSID --config $CONFIG \
             --keyring $KEYRING -- ceph orch daemon add osd "$HOSTNAME:$item"
     done
 }
@@ -414,9 +414,9 @@ test -e $CONFIG
 test -e $KEYRING
 
 # Wait cephadm backend to be operational
-sleep "$SLEEP"
 fi
 
+sleep "$SLEEP"
 cephadm_debug
 # let's add some osds
 if [ -z "$DEVICES" ]; then
@@ -467,6 +467,7 @@ spec:
   virtual_ip: $VIP/24"
 EOF
 fi
+
 
 # add the provided pools
 create_pools
