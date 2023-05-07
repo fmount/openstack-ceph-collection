@@ -70,7 +70,7 @@ function crd {
         echo "crd $ACTION <operator_name>"
     else
         # stat operator_name path first ?
-        for i in $WORKDIR/$OPERATOR_NAME-operator/config/crd/bases/* ; {
+        for i in $(ls $WORKDIR/$OPERATOR_NAME-operator/config/crd/bases/* | grep -v _.yaml) ; {
             oc $ACTION -f $i;
         }
     fi
@@ -123,15 +123,15 @@ function endpoint_create {
     done
 }
 
-function scale_operators {
-    for op in ironic openstack cinder glance placement ovn ovs nova neutron; do
-        oc scale deployment $op-operator-controller-manager --replicas=0
-    done
-}
-
 function scale_operator {
     local op="$1"
     oc scale deployment $op-operator-controller-manager --replicas=0
+}
+
+function scale_operators {
+    for op in openstack-ansibleee manila ironic horizon openstack cinder glance placement dataplane nova neutron; do
+        scale_operator $op
+    done
 }
 
 # TEST OPERATORS
@@ -151,11 +151,12 @@ function test_cinder {
 }
 
 function test_glance {
+    OSP="/usr/local/bin/oc rsh openstackclient openstack"
     IMAGE=$SAMPLES/cirros-0.5.2-x86_64-disk.img
-    openstack image create --disk-format qcow2 --container-format bare --file $IMAGE cirros-test
+    "$OSP" image create --disk-format qcow2 --container-format bare --file "$IMAGE" cirros-test
     sleep 5
-    openstack image list
-    openstack delete cirros-test
+    "$OSP" image list
+    #openstack delete cirros-test
 }
 
 function test_glance_policies {
@@ -225,3 +226,10 @@ function attach_interface {
     sudo virsh attach-interface --domain $domain --type network --mac ${MAC} --source $net_name --model virtio --config --live
 }
 
+function clean_pods {
+    oc delete pod --field-selector=status.phase==Succeeded
+}
+
+function refresh_glance {
+    oc get pods | grep -E "glance-(ext|int)" | awk '{print $1}' | xargs -n 1 oc delete pod
+}
