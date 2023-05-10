@@ -1,0 +1,34 @@
+parameters:
+  nodes: 1
+  pool: default
+  network: crc
+  domain: adoption.local
+  prefix: adoption
+  numcpus: 2
+  memory: 4096
+  image: centos8stream
+  notify: false
+  admin_password: iamgroot
+
+{% for number in range(0, nodes) %}
+{{ prefix }}-node-0{{ number }}:
+ image: {{ image }}
+ numcpus: {{ numcpus }}
+ memory: {{ memory }}
+ reservedns: true
+ sharedkey: true
+ domain: {{ domain }}
+ nets:
+  - {{ network }}
+ disks:
+   - size: 10
+ pool: {{ pool }}
+ cmds:
+ - sed -i "s/SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
+ - setenforce 0
+ - echo {{ admin_password  }} | passwd --stdin root
+ - hostnamectl set-hostname {{ prefix }}-node-0{{ number }}
+ - hostnamectl set-hostname --transient {{ prefix }}-node-0{{ number }}
+ scripts:
+  - bootstrap.sh
+{% endfor %}
