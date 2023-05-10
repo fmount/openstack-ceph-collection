@@ -44,5 +44,5 @@ Assumptions:
 - All "Glances" have both /etc/ceph and /etc/ceph2
 - CinderBackup and cinder-volume1 mount /etc/ceph
 - cinder-volume2 receives /etc/ceph2
-- Compute (the ansibleEE pod) receives all the mounts
+- Compute (the ansibleEE pod) receives all Mounts
 

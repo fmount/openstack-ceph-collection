@@ -59,6 +59,7 @@ spec:
       containerImage: quay.io/tripleozedcentos9/openstack-placement-api:current-tripleo
       secret: osp-secret
   glance:
+    enabled: false
     template:
       customServiceConfigSecrets:
         - glance-secret
@@ -101,7 +102,7 @@ spec:
           containerImage: quay.io/tripleozedcentos9/openstack-cinder-volume:current-tripleo
           replicas: 0 # backend needs to be configured
   manila:
-    enabled: false
+    enabled: true
     template:
       customServiceConfig: |
          [DEFAULT]
@@ -127,6 +128,23 @@ spec:
         containerImage: quay.io/tripleozedcentos9/openstack-manila-scheduler:current-tripleo
       manilaShares:
         share1:
+          customServiceConfig: |
+            [DEFAULT]
+            transport_url=rabbit://openstack:redhat@10.217.4.183:5672
+            debug = true
+            enabled_share_backends=cephfs
+            enabled_share_protocols=cephfs
+            [cephfs]
+            driver_handles_share_servers=False
+            share_backend_name=cephfs
+            share_driver=manila.share.drivers.cephfs.driver.CephFSDriver
+            cephfs_conf_path=/etc/ceph/ceph.conf
+            cephfs_auth_id=openstack
+            cephfs_cluster_name=ceph
+            cephfs_enable_snapshots=True
+            cephfs_ganesha_server_is_remote=False
+            cephfs_volume_mode=0755
+            cephfs_protocol_helper_type=CEPHFS
           containerImage: quay.io/tripleozedcentos9/openstack-manila-share:current-tripleo
           replicas: 1
   ovn:
@@ -186,7 +204,7 @@ spec:
       region: r1
       extraVol:
         - propagation:
-          - Glance
+          - Manila
           extraVolType: Ceph
           volumes:
           - name: ceph
