@@ -1,5 +1,0 @@
-<network>
-  <name>default</name>
-  <bridge name="default" />
-</network>
-
