@@ -1,0 +1,34 @@
+parameters:
+  nodes: 1
+  pool: default
+  network: default
+  domain: devstack.local
+  prefix: devstack
+  numcpus: 4
+  memory: 16384
+  image: ubuntu2004
+  notify: false
+  admin_password: iamgroot
+
+{% for number in range(0, nodes) %}
+{{ prefix }}-node-0{{ number }}:
+ image: {{ image }}
+ numcpus: {{ numcpus }}
+ memory: {{ memory }}
+ reservedns: true
+ sharedkey: true
+ domain: {{ domain }}
+ nets:
+  - {{ network }}
+ disks:
+   - size: 20
+ pool: {{ pool }}
+ cmds:
+ - sed -i "s/SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
+ - setenforce 0
+ - echo {{ admin_password  }} | passwd --stdin root
+ - hostnamectl set-hostname {{ prefix }}-node-0{{ number }}
+ - hostnamectl set-hostname --transient {{ prefix }}-node-0{{ number }}
+ #scripts:
+ # - bootstrap.sh
+{% endfor %}
