@@ -150,6 +150,18 @@ function test_cinder {
     cinder create 1 --volume-type $type --name "$type"_disk
 }
 
+function test_manila {
+    openstack share list
+    openstack share service list
+    openstack share pool list
+    # openstack share pool list --detail
+    openstack share type list
+    openstack share type create default false
+    openstack share type list
+    openstack share create cephfs 1
+    openstack share list
+}
+
 function test_glance {
     OSP="/usr/local/bin/oc rsh openstackclient openstack"
     IMAGE=$SAMPLES/cirros-0.5.2-x86_64-disk.img

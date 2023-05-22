@@ -1,0 +1,21 @@
+apiVersion: horizon.openstack.org/v1beta1
+kind: Horizon
+metadata:
+  name: horizon
+spec:
+  replicas: 1
+  secret: "osp-secret"
+  containerImage: quay.io/podified-antelope-centos9/openstack-horizon:current-podified
+  customServiceConfig: |
+    SESSION_TIMEOUT = 3600
+  extraMounts:
+    - extraVolType: horizon
+      volumes:
+        - name: horizon-theme
+          persistentVolumeClaim:
+            claimName: horizon-theme
+            readOnly: false
+      mounts:
+        - name: horizon-theme
+          mountPath: /var/lib/config-data/merged/mytheme
+          readOnly: false
