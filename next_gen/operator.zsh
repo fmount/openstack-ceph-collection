@@ -22,6 +22,7 @@ function crc_setup {
     crc config set skip-check-daemon-systemd-sockets true
     crc config set cpus 10
     crc config set memory 20480
+    crc config set disk-size 50
     ${CRC_BIN} setup
 }
 
