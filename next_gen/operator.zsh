@@ -223,7 +223,9 @@ function checkout_pr {
 }
 
 function disable_webhooks {
-    oc patch csv openstack-operator.v0.0.1 --type=json -p="[{'op': 'remove', 'path': '/spec/webhookdefinitions'}]"
+    OPERATOR=${OPERATOR:-"openstack"}
+    VERSION=${VERSION:-"v0.0.1"}
+    oc patch csv $OPERATOR-operator.$VERSION --type=json -p="[{'op': 'remove', 'path': '/spec/webhookdefinitions'}]"
 }
 
 
