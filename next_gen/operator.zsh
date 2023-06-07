@@ -126,12 +126,13 @@ function endpoint_create {
 
 function scale_operator {
     local op="$1"
-    oc scale deployment $op-operator-controller-manager --replicas=0
+    local ns="$2"
+    oc scale deployment $op-operator-controller-manager --replicas=0 -n $ns
 }
 
 function scale_operators {
     for op in openstack-ansibleee manila ironic horizon openstack cinder glance placement dataplane nova neutron; do
-        scale_operator $op
+        scale_operator $op $ns
     done
 }
 
