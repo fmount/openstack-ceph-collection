@@ -65,16 +65,16 @@ function test_mshare {
 function test_all_shares {
 
     local client1="192.168.130.27"
-    local share_nfs="192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc"
-    local share_netapp="192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e"
-    local share_cephfs="192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054"
+    local export_nfs="192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc"
+    local export_netapp="192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e"
+    local export_cephfs="192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054"
 
     echo
     printf "=> ${RED}CREATE ACCESS RULE${NC}\n"
-    echo oc rsh openstackclient openstack share access create share_nfs ip $client1
-    echo oc rsh openstackclient openstack share access create share_netapp ip $client1
+    oc rsh openstackclient openstack share access create share_nfs ip $client1
+    oc rsh openstackclient openstack share access create share_netapp ip $client1
     #oc rsh openstackclient openstack share access create share_cephfs ip $client1
-    echo oc rsh openstackclient openstack share access create share_cephfs cephx alice
+    oc rsh openstackclient openstack share access create share_cephfs cephx alice
     echo
     sleep $TIME
 
@@ -86,13 +86,13 @@ function test_all_shares {
     echo
 
     echo "sudo -u root ssh root@10.10.10.50 mkdir -p /mnt/share_{nfs,netapp,cephfs}"
-    #sudo -u root ssh root@10.10.10.50 mkdir -p /mnt/share_{nfs,netapp,cephfs}
-    echo "sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt/share_nfs"
+    sudo -u root ssh root@10.10.10.50 mkdir -p /mnt/share_{nfs,netapp,cephfs}
+    echo "sudo -u root ssh root@10.10.10.50 mount -t nfs $export_nfs /mnt/share_nfs"
     sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt/share_nfs
-    echo "sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e /mnt/share_netapp"
+    echo "sudo -u root ssh root@10.10.10.50 mount -t nfs $export_netapp /mnt/share_netapp"
     sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e /mnt/share_netapp
     cephx_secret=$(oc rsh openstackclient openstack share access list share_cephfs -c "Access Key" -f value)
-    echo "sudo -u root ssh root@10.10.10.50 mount -t ceph 192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054 /mnt/share_cephfs -o name=alice,secret=*******"
+    echo "sudo -u root ssh root@10.10.10.50 mount -t ceph $export_cephfs /mnt/share_cephfs -o name=alice,secret=*******"
     sudo -u root ssh root@10.10.10.50 mount -t ceph 192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054 /mnt/share_cephfs -o name=alice,secret=$cephx_secret 2>/dev/null
 
     sleep $TIME
