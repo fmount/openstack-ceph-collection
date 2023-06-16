@@ -81,9 +81,6 @@ distribute_keys() {
 function enroll_hosts() {
     # TODO: ADD LABELS to the host, otherwise it will get everythin (mon/mgr)
     # which is ok for an HCI solution
-    devices="$1"
-    [ "${#HOSTS[@]}" -eq 0 ] && return;
-
     for host in "${!HOSTS[@]}"; do
         echo "Processing host -> $host:${HOSTS[$host]}";
         ip=${HOSTS[$host]}
@@ -520,6 +517,9 @@ set_container_images
 # add more services
 process_services
 check_cluster_status
+
+[ "${#HOSTS[@]}" -gt 0 ] && enroll_hosts
+
 export_spec
 
 # render a ceph client config file
