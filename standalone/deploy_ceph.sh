@@ -10,7 +10,7 @@ REQUIREMENTS=("jq" "lvm" "python3")
 
 # DEFAULT OPTIONS
 FSID="4b5c8c0a-ff60-454b-a1b4-9747aa737d19"
-CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v17.2.4'}
+CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v18.1'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
@@ -93,7 +93,7 @@ function enroll_hosts() {
 }
 
 function install_cephadm() {
-    curl -O https://raw.githubusercontent.com/ceph/ceph/quincy/src/cephadm/cephadm
+    curl -o cephadm https://raw.githubusercontent.com/ceph/ceph/reef/src/cephadm/cephadm.py
     $SUDO mv cephadm $TARGET_BIN
     $SUDO chmod +x $TARGET_BIN/cephadm
     echo "[INSTALL CEPHADM] cephadm is ready"
