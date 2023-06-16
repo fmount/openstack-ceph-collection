@@ -72,6 +72,13 @@ SHARED_OPT=""
 #   - feature1 -> add pv/vg/lv for loopback
 #   - install cephadm from centos storage sig
 
+get_ceph_cli() {
+    MON_NAME=$($SUDO $CEPHADM ls | jq '.[]' | jq 'select(.name | test("^mon*")).name' | sed s/\"//g);
+    MON_CID=$($SUDO $CEPHADM ls | jq '.[]' | jq 'select(.name | test("^mon*")).container_id' | sed s/\"//g);
+    podman cp /etc/ceph/ceph.client.admin.keyring $MON_CID:/etc/ceph/ceph.client.admin.keyring
+    CEPHADM_CLI="$SUDO $CEPHADM enter --name $NAME -- ceph"
+}
+
 distribute_keys() {
     local ip="$1"
     ssh-copy-id -o StrictHostKeyChecking=no -i "$DEFAULT_CEPH_PUB" root@"$ip"
@@ -85,8 +92,8 @@ function enroll_hosts() {
         echo "Processing host -> $host:${HOSTS[$host]}";
         ip=${HOSTS[$host]}
         distribute_keys "$ip"
-        echo $SUDO $CEPHADM shell --fsid $FSID --config $CONFIG \
-            --keyring $KEYRING -- ceph orch host add "$host:$ip"
+        $SUDO $CEPHADM shell --fsid $FSID --config $CONFIG \
+            --keyring $KEYRING -- ceph orch host add "$host $ip"
     done
     sleep "$SLEEP"
     # TODO: ADD DEVICES
@@ -518,6 +525,7 @@ set_container_images
 process_services
 check_cluster_status
 
+# get_ceph_cli
 [ "${#HOSTS[@]}" -gt 0 ] && enroll_hosts
 
 export_spec
