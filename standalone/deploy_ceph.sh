@@ -53,6 +53,9 @@ declare -A INGRESS_IMAGES
 INGRESS_IMAGES[haproxy]='2.3'
 INGRESS_IMAGES[keepalived]='2.1.5'
 
+# ADDITIONAL HOSTS
+declare -A HOSTS
+DEFALT_CEPH_PUB=/etc/ceph/ceph.pub
 
 # CLIENT CONFIG
 RBD_CLIENT_LOG=/var/log/ceph/qemu-guest-$pid.log
@@ -69,6 +72,28 @@ SHARED_OPT=""
 #   - feature1 -> add pv/vg/lv for loopback
 #   - install cephadm from centos storage sig
 
+distribute_keys() {
+    local ip="$1"
+    ssh-copy-id -o StrictHostKeyChecking=no -i "$DEFAULT_CEPH_PUB" root@"$ip"
+}
+
+# this function follows https://docs.ceph.com/en/latest/cephadm/host-management/
+function enroll_hosts() {
+    # TODO: ADD LABELS to the host, otherwise it will get everythin (mon/mgr)
+    # which is ok for an HCI solution
+    devices="$1"
+    [ "${#HOSTS[@]}" -eq 0 ] && return;
+
+    for host in "${!HOSTS[@]}"; do
+        echo "Processing host -> $host:${HOSTS[$host]}";
+        ip=${HOSTS[$host]}
+        distribute_keys "$ip"
+        echo $SUDO $CEPHADM shell --fsid $FSID --config $CONFIG \
+            --keyring $KEYRING -- ceph orch host add "$host:$ip"
+    done
+    sleep "$SLEEP"
+    # TODO: ADD DEVICES
+}
 
 function install_cephadm() {
     curl -O https://raw.githubusercontent.com/ceph/ceph/quincy/src/cephadm/cephadm
@@ -332,13 +357,20 @@ function preview() {
     [ -z "$DEVICES" ] && echo "Using ALL available devices"
 
     echo "---------"
-    echo IP Address: "$IP"
+    echo MON IP Address: "$IP"
     echo "---------"
     echo "---------"
     echo VIP Addresses: "$VIP"
     echo "---------"
     echo "Container Image: $CONTAINER_IMAGE"
     echo "---------"
+    if [ -z "$HOSTS" ]; then
+        echo "---------"
+        echo "ADDITIONAL HOSTS"
+        for host in "${!HOSTS[@]}"; do
+            echo "* $host:${HOSTS[$host]}"
+        done
+    fi
 }
 
 if [[ ${#} -eq 0 ]]; then
@@ -347,8 +379,14 @@ if [[ ${#} -eq 0 ]]; then
 fi
 
 ## Process input parameters
-while getopts "c:s:i:p:d:k:v:t" opt; do
+while getopts "a:c:s:i:p:d:k:v:t" opt; do
     case $opt in
+        a) curr_host=(${OPTARG//:/ })
+           [ -z "${curr_host[1]}" ] && echo "-a: Malformed host" && exit -1
+           # HOSTS input is provided in the form { HOSTNAME:IP }.
+           # An associative array is built starting from this input.
+           HOSTS[${curr_host[0]}]=${curr_host[1]}
+           ;;
         c) CONTAINER_IMAGE="$OPTARG";;
         d) DEVICES+=("$OPTARG");;
         k) KEYS+=("$OPTARG");;
@@ -364,7 +402,7 @@ while getopts "c:s:i:p:d:k:v:t" opt; do
            exit 0
            ;;
         v) VIP="$OPTARG";;
-        *) usage
+        *) usage && exit -1
     esac
 done
 shift $((OPTIND -1))
