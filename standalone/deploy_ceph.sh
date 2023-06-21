@@ -75,7 +75,7 @@ SHARED_OPT=""
 get_ceph_cli() {
     MON_NAME=$($SUDO $CEPHADM ls | jq '.[]' | jq 'select(.name | test("^mon*")).name' | sed s/\"//g);
     MON_CID=$($SUDO $CEPHADM ls | jq '.[]' | jq 'select(.name | test("^mon*")).container_id' | sed s/\"//g);
-    podman cp /etc/ceph/ceph.client.admin.keyring $MON_CID:/etc/ceph/ceph.client.admin.keyring
+    $(which podman) cp $KEYRING $MON_CID:$KEYRING
     CEPHADM_CLI="$SUDO $CEPHADM enter --name $NAME -- ceph"
 }
 
