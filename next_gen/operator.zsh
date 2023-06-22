@@ -20,8 +20,9 @@ function crc_setup {
     # https://github.com/code-ready/crc/issues/2674
     crc config set skip-check-daemon-systemd-unit true
     crc config set skip-check-daemon-systemd-sockets true
+    crc config set skip-check-crc-symlink true
     crc config set cpus 10
-    crc config set memory 20480
+    crc config set memory 65536
     crc config set disk-size 50
     ${CRC_BIN} setup
 }
