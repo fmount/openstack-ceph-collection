@@ -5,6 +5,7 @@ for each OpenStack and Ceph cycle.
 
 | OpenStack    | Ceph           |
 |--------------|-----------------
+| Antelope     | Quincy/Reef    |
 | Wallaby      | Octopus/Pacific|
 | Xena         | Pacific        |
 | Yoga         | Pacific        |
