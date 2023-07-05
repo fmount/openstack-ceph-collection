@@ -1,0 +1,543 @@
+apiVersion: core.openstack.org/v1beta1
+kind: OpenStackControlPlane
+metadata:
+  name: openstack
+  namespace: openstack
+spec:
+  cinder:
+    enabled: true
+    template:
+      cinderAPI:
+        containerImage: quay.io/tripleozedcentos9/openstack-cinder-api:current-tripleo
+        debug:
+          initContainer: false
+          service: false
+        replicas: 1
+        resources: {}
+      cinderBackup:
+        containerImage: quay.io/podified-antelope-centos9/openstack-cinder-backup:current-podified
+        debug:
+          initContainer: false
+          service: false
+        replicas: 0
+        resources: {}
+      cinderScheduler:
+        containerImage: quay.io/podified-antelope-centos9/openstack-cinder-scheduler:current-podified
+        debug:
+          initContainer: false
+          service: false
+        replicas: 1
+        resources: {}
+      cinderVolumes:
+        volume1:
+          containerImage: quay.io/podified-antelope-centos9/openstack-cinder-volume:current-podified
+          customServiceConfig: |
+            [ceph]
+            volume_backend_name=ceph
+            volume_driver=cinder.volume.drivers.rbd.RBDDriver
+            rbd_ceph_conf=/etc/ceph/ceph.conf
+            rbd_user=openstack
+            rbd_pool=volumes
+            rbd_flatten_volume_from_snapshot=False
+            report_discard_supported=True
+            rbd_secret_uuid=e88bd4f5-c691-4e95-b70e-a49f459bf4ab
+          debug:
+            initContainer: false
+            service: false
+          replicas: 0
+          resources: {}
+      databaseInstance: openstack
+      databaseUser: cinder
+      debug:
+        dbInitContainer: false
+        dbSync: false
+      passwordSelectors:
+        database: CinderDatabasePassword
+        service: CinderPassword
+      preserveJobs: false
+      rabbitMqClusterName: rabbitmq
+      secret: osp-secret
+      serviceUser: cinder
+  dns:
+    enabled: false
+    template:
+      containerImage: ""
+      debug:
+        service: false
+      dnsDataLabelSelectorValue: ""
+      replicas: 0
+  extraMounts:
+  - extraVol:
+    - extraVolType: Ceph
+      mounts:
+      - mountPath: /etc/ceph
+        name: ceph
+        readOnly: true
+      propagation:
+      - Glance
+      - Cinder
+      volumes:
+      - name: ceph
+        projected:
+          sources:
+          - secret:
+              name: ceph-conf-files
+    name: v1
+    region: r1
+  galera:
+    enabled: false
+  glance:
+    enabled: true
+    template:
+      containerImage: quay.io/podified-antelope-centos9/openstack-glance-api:current-podified
+      customServiceConfig: |
+        [DEFAULT]
+        enabled_backends = default_backend:cinder
+        [glance_store]
+        default_backend = default_backend
+        [default_backend]
+        rootwrap_config = /etc/glance/rootwrap.conf
+        description = Default cinder backend
+        cinder_catalog_info = volumev3::publicURL
+      customServiceConfigSecrets:
+      - osp-glance-cinder-secret
+      databaseInstance: openstack
+      databaseUser: glance
+      debug:
+        dbSync: false
+      glanceAPIExternal:
+        containerImage: quay.io/podified-antelope-centos9/openstack-glance-api:current-podified
+        debug:
+          service: false
+        replicas: 1
+        resources: {}
+      glanceAPIInternal:
+        containerImage: quay.io/podified-antelope-centos9/openstack-glance-api:current-podified
+        debug:
+          service: false
+        replicas: 1
+        resources: {}
+      passwordSelectors:
+        database: GlanceDatabasePassword
+        service: GlancePassword
+      preserveJobs: false
+      serviceUser: glance
+      storageRequest: 10G
+  horizon:
+    enabled: false
+    template:
+      containerImage: quay.io/podified-antelope-centos9/openstack-horizon:current-podified
+      customServiceConfig: '# add your customization here'
+      debug:
+        service: false
+      preserveJobs: false
+      replicas: 1
+      resources: {}
+      route:
+        routeName: horizon
+      secret: osp-secret
+  ironic:
+    enabled: false
+    template:
+      customServiceConfig: '# add your customization here'
+      databaseInstance: openstack
+      debug:
+        dbSync: false
+        service: false
+      images:
+        api: ""
+        conductor: ""
+        inspector: ""
+        neutronAgent: ""
+        pxe: ""
+      ironicAPI:
+        containerImage: quay.io/tripleozedcentos9/openstack-ironic-api:current-tripleo
+        customServiceConfig: '# add your customization here'
+        debug:
+          dbSync: false
+          service: false
+        passwordSelectors:
+          database: IronicDatabasePassword
+          service: IronicPassword
+        replicas: 0
+        resources: {}
+        rpcTransport: json-rpc
+        serviceAccount: ""
+        serviceUser: ironic
+        standalone: false
+      ironicConductors:
+      - conductorGroup: ""
+        containerImage: quay.io/tripleozedcentos9/openstack-ironic-conductor:current-tripleo
+        customServiceConfig: '# add your customization here'
+        debug:
+          dbSync: false
+          service: false
+        passwordSelectors:
+          database: IronicDatabasePassword
+          service: IronicPassword
+        pxeContainerImage: quay.io/tripleozedcentos9/openstack-ironic-pxe:current-tripleo
+        replicas: 0
+        resources: {}
+        rpcTransport: json-rpc
+        serviceAccount: ""
+        serviceUser: ironic
+        standalone: false
+        storageClass: ""
+        storageRequest: 10G
+      ironicInspector:
+        containerImage: quay.io/tripleozedcentos9/openstack-ironic-inspector:current-tripleo
+        customServiceConfig: '# add your customization here'
+        databaseInstance: ""
+        debug:
+          dbSync: false
+          service: false
+        passwordSelectors:
+          database: IronicInspectorDatabasePassword
+          service: IronicInspectorPassword
+        preserveJobs: true
+        pxeContainerImage: quay.io/tripleozedcentos9/openstack-ironic-pxe:current-tripleo
+        rabbitMqClusterName: rabbitmq
+        replicas: 0
+        resources: {}
+        rpcTransport: json-rpc
+        serviceAccount: ""
+        serviceUser: ironic-inspector
+        standalone: false
+      ironicNeutronAgent:
+        containerImage: ""
+        customServiceConfig: ""
+        debug:
+          service: false
+        passwordSelectors:
+          service: ""
+        rabbitMqClusterName: ""
+        replicas: 0
+        resources: {}
+        secret: ""
+        serviceAccount: ""
+        serviceUser: ""
+      passwordSelectors:
+        database: IronicDatabasePassword
+        service: IronicPassword
+      preserveJobs: true
+      rabbitMqClusterName: rabbitmq
+      rpcTransport: json-rpc
+      secret: osp-secret
+      serviceUser: ironic
+      standalone: false
+      storageClass: ""
+  keystone:
+    enabled: true
+    template:
+      adminProject: admin
+      adminUser: admin
+      containerImage: quay.io/tripleozedcentos9/openstack-keystone:current-tripleo
+      databaseInstance: openstack
+      databaseUser: keystone
+      debug:
+        bootstrap: false
+        dbSync: false
+        service: false
+      passwordSelectors:
+        admin: AdminPassword
+        database: KeystoneDatabasePassword
+      preserveJobs: false
+      region: regionOne
+      replicas: 1
+      resources: {}
+      secret: osp-secret
+      trustFlushArgs: ""
+      trustFlushSchedule: 1 * * * *
+      trustFlushSuspend: false
+  manila:
+    enabled: false
+    template:
+      customServiceConfig: '# add your customization here'
+      databaseUser: manila
+      debug:
+        dbInitContainer: false
+        dbSync: false
+      manilaAPI:
+        containerImage: quay.io/tripleozedcentos9/openstack-manila-api:current-tripleo
+        customServiceConfig: '# add your customization here'
+        debug:
+          initContainer: false
+          service: false
+        replicas: 1
+        resources: {}
+      manilaScheduler:
+        containerImage: quay.io/tripleozedcentos9/openstack-manila-scheduler:current-tripleo
+        customServiceConfig: '# add your customization here'
+        debug:
+          initContainer: false
+          service: false
+        replicas: 1
+        resources: {}
+      manilaShares:
+        share1:
+          containerImage: quay.io/tripleozedcentos9/openstack-manila-share:current-tripleo
+          customServiceConfig: |
+            [DEFAULT]
+            enabled_share_backends=cephfs
+            enabled_share_protocols=cephfs
+            [cephfs]
+            driver_handles_share_servers=False
+            share_backend_name=cephfs
+            share_driver=manila.share.drivers.cephfs.driver.CephFSDriver
+            cephfs_conf_path=/etc/ceph/ceph.conf
+            cephfs_auth_id=openstack
+            cephfs_cluster_name=ceph
+            cephfs_volume_mode=0755
+            cephfs_protocol_helper_type=CEPHFS
+          debug:
+            initContainer: false
+            service: false
+          replicas: 1
+          resources: {}
+      passwordSelectors:
+        database: ManilaDatabasePassword
+        service: ManilaPassword
+      preserveJobs: false
+      rabbitMqClusterName: rabbitmq
+      serviceUser: manila
+  mariadb:
+    enabled: true
+    templates:
+      openstack:
+        adoptionRedirect: {}
+        containerImage: quay.io/tripleozedcentos9/openstack-mariadb:current-tripleo
+        storageClass: local-storage
+        storageRequest: 500M
+  memcached:
+    enabled: false
+  neutron:
+    enabled: true
+    template:
+      containerImage: quay.io/tripleozedcentos9/openstack-neutron-server:current-tripleo
+      databaseInstance: openstack
+      databaseUser: neutron
+      debug:
+        bootstrap: false
+        dbSync: false
+        service: false
+      passwordSelectors:
+        database: NeutronDatabasePassword
+        service: NeutronPassword
+      preserveJobs: false
+      rabbitMqClusterName: rabbitmq
+      replicas: 1
+      resources: {}
+      secret: osp-secret
+      serviceUser: neutron
+  nova:
+    enabled: false
+    template:
+      apiDatabaseInstance: openstack
+      apiDatabaseUser: nova_api
+      apiMessageBusInstance: rabbitmq
+      apiServiceTemplate:
+        containerImage: ""
+        customServiceConfig: ""
+        replicas: 1
+        resources: {}
+      cellTemplates:
+        cell0:
+          cellDatabaseInstance: openstack
+          cellDatabaseUser: nova_cell0
+          cellMessageBusInstance: rabbitmq
+          conductorServiceTemplate:
+            containerImage: quay.io/podified-antelope-centos9/openstack-nova-conductor:current-podified
+            customServiceConfig: ""
+            replicas: 1
+            resources: {}
+          hasAPIAccess: true
+          metadataServiceTemplate:
+            containerImage: ""
+            customServiceConfig: ""
+            replicas: 0
+            resources: {}
+          noVNCProxyServiceTemplate:
+            containerImage: ""
+            customServiceConfig: ""
+            replicas: 1
+            resources: {}
+        cell1:
+          cellDatabaseInstance: openstack-cell1
+          cellDatabaseUser: nova_cell1
+          cellMessageBusInstance: rabbitmq-cell1
+          conductorServiceTemplate:
+            containerImage: quay.io/podified-antelope-centos9/openstack-nova-conductor:current-podified
+            customServiceConfig: ""
+            replicas: 1
+            resources: {}
+          hasAPIAccess: true
+          metadataServiceTemplate:
+            containerImage: ""
+            customServiceConfig: ""
+            replicas: 0
+            resources: {}
+          noVNCProxyServiceTemplate:
+            containerImage: ""
+            customServiceConfig: ""
+            replicas: 1
+            resources: {}
+      debug:
+        preserveJobs: false
+        stopDBSync: false
+        stopService: false
+      keystoneInstance: keystone
+      metadataServiceTemplate:
+        containerImage: ""
+        customServiceConfig: ""
+        replicas: 1
+        resources: {}
+      passwordSelectors:
+        apiDatabase: NovaAPIDatabasePassword
+        cellDatabase: NovaCell0DatabasePassword
+        metadataSecret: MetadataSecret
+        service: NovaPassword
+      schedulerServiceTemplate:
+        containerImage: ""
+        customServiceConfig: ""
+        replicas: 1
+        resources: {}
+      secret: osp-secret
+      serviceUser: nova
+  ovn:
+    enabled: true
+    template:
+      ovnController:
+        external-ids:
+          ovn-bridge: br-int
+          ovn-encap-type: geneve
+          system-id: random
+        networkAttachment: ""
+        ovnContainerImage: quay.io/podified-antelope-centos9/openstack-ovn-controller:current-podified
+        ovsContainerImage: quay.io/podified-antelope-centos9/openstack-ovn-base:current-podified
+        resources: {}
+      ovnDBCluster:
+        ovndbcluster-nb:
+          containerImage: quay.io/tripleozedcentos9/openstack-ovn-nb-db-server:current-tripleo
+          dbType: NB
+          electionTimer: 10000
+          inactivityProbe: 60000
+          logLevel: info
+          networkAttachment: ""
+          probeIntervalToActive: 60000
+          replicas: 1
+          resources: {}
+          storageRequest: 10G
+        ovndbcluster-sb:
+          containerImage: quay.io/tripleozedcentos9/openstack-ovn-sb-db-server:current-tripleo
+          dbType: SB
+          electionTimer: 10000
+          inactivityProbe: 60000
+          logLevel: info
+          networkAttachment: ""
+          probeIntervalToActive: 60000
+          replicas: 1
+          resources: {}
+          storageRequest: 10G
+      ovnNorthd:
+        containerImage: quay.io/tripleozedcentos9/openstack-ovn-northd:current-tripleo
+        logLevel: info
+        networkAttachment: ""
+        replicas: 1
+        resources: {}
+  placement:
+    enabled: false
+    template:
+      containerImage: ""
+      customServiceConfig: ""
+      databaseInstance: ""
+      databaseUser: ""
+      debug:
+        dbSync: false
+        service: false
+      passwordSelectors:
+        database: ""
+        service: ""
+      preserveJobs: false
+      replicas: 0
+      resources: {}
+      secret: ""
+      serviceUser: ""
+  rabbitmq:
+    enabled: true
+    templates:
+      rabbitmq:
+        override: {}
+        persistence:
+          storage: 10Gi
+        rabbitmq: {}
+        replicas: 1
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            memory: 2Gi
+        secretBackend: {}
+        service:
+          type: ClusterIP
+        terminationGracePeriodSeconds: 604800
+        tls: {}
+      rabbitmq-cell1:
+        override: {}
+        persistence:
+          storage: 10Gi
+        rabbitmq: {}
+        replicas: 1
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            memory: 2Gi
+        secretBackend: {}
+        service:
+          type: ClusterIP
+        terminationGracePeriodSeconds: 604800
+        tls: {}
+  secret: osp-secret
+  storageClass: local-storage
+  telemetry:
+    enabled: false
+    template:
+      ceilometerCentral:
+        centralImage: ""
+        customServiceConfig: '# add your customization here'
+        description: A ceilometer agent
+        initImage: ""
+        notificationImage: ""
+        passwordSelector:
+          service: ""
+        secret: ""
+        serviceAccount: ""
+        serviceUser: ""
+        sgCoreImage: ""
+      ceilometerCompute:
+        computeImage: ""
+        customServiceConfig: '# add your customization here'
+        dataplaneInventoryConfigMap: dataplanerole-edpm-compute
+        dataplaneSSHSecret: dataplane-ansible-ssh-private-key-secret
+        description: A ceilometer compute agent
+        initImage: ""
+        passwordSelector:
+          service: ""
+        playbook: deploy-ceilometer.yaml
+        secret: ""
+        serviceAccount: ""
+        serviceUser: ""
+      description: A ceilometer agent
+      infraCompute:
+        dataplaneInventoryConfigMap: dataplanerole-edpm-compute
+        dataplaneSSHSecret: dataplane-ansible-ssh-private-key-secret
+        description: An infra compute agent
+        extravarsConfigMap: telemetry-infracompute-extravars
+        nodeExporterImage: ""
+        playbook: deploy-infra.yaml
+        serviceAccount: ""
+      rabbitMqClusterName: rabbitmq
