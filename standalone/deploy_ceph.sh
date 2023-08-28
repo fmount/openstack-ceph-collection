@@ -35,16 +35,21 @@ NFS_CLIENT_LOG="/var/log/ceph-$NFS_CLIENT_NAME.log"
 
 # POOLS
 declare -A POOLS
-# POOLS[test]='rbd'
 DEFAULT_PG_NUM=8
 DEFAULT_PGP_NUM=8
 
 # RGW OPTIONS
 RGW_PORT=8080
 RGW_INGRESS=1
+RGW_NET=${RGW_NET:-"$IP"}
 RGW_INGRESS_FPORT=8080
 RGW_INGRESS_MPORT=8999
 RGW_INGRESS_SPEC="rgw_ingress.yml"
+
+RGW_USER=${RGW_USER:-"swift"}
+RGW_PASS=${RGW_PASS:-"12345678"}
+KEYSTONE_EP=${KEYSTONE_EP:-"http://keystone-public-openstack.apps-crc.testing"}
+RGW_CONF=${RGW_CONF:-"rgw_conf.sh"}
 
 # INGRESS CONFIG
 VIP=${VIP:-'127.0.0.1'} # the frontend vip managed by keepalived
@@ -126,10 +131,35 @@ function build_osds_from_list() {
     done
 }
 
+function configure_swift_rgw() {
+cat > "$RGW_CONF" <<-EOF
+    ceph config set global rgw_keystone_url "$KEYSTONE_EP"
+    ceph config set global rgw_keystone_verify_ssl false
+    ceph config set global rgw_keystone_api_version 3
+    ceph config set global rgw_keystone_accepted_roles "member, Member, admin"
+    ceph config set global rgw_keystone_accepted_admin_roles "ResellerAdmin, swiftoperator"
+    ceph config set global rgw_keystone_admin_domain default
+    ceph config set global rgw_keystone_admin_project service
+    ceph config set global rgw_keystone_admin_user "$RGW_USER"
+    ceph config set global rgw_keystone_admin_password "$RGW_PASS"
+    ceph config set global rgw_keystone_implicit_tenants true
+    ceph config set global rgw_s3_auth_use_keystone true
+    ceph config set global rgw_swift_versioning_enabled true
+    ceph config set global rgw_swift_enforce_content_length true
+    ceph config set global rgw_swift_account_in_url true
+    ceph config set global rgw_trust_forwarded_https true
+    ceph config set global rgw_max_attr_name_len 128
+    ceph config set global rgw_max_attrs_num_in_req 90
+    ceph config set global rgw_max_attr_size 1024
+EOF
+    $SUDO "$CEPHADM" shell -m "$RGW_CONF" --fsid $FSID --config $CONFIG \
+        --keyring $KEYRING -- sh "$RGW_CONF"
+}
+
 function rgw() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply rgw default \
-        "--placement=$HOSTNAME count:1" --port "$RGW_PORT"
+        "--network $RGW_NET --placement=$HOSTNAME count:1" --port "$RGW_PORT"
 
     if [ "$RGW_INGRESS" -eq 1 ]; then
       echo "[CEPHADM] Deploy rgw.default Ingress Service"
@@ -179,6 +209,7 @@ function process_services() {
           ;;
           rgw|RGW)
           echo "Deploying RGW on node $HOSTNAME"
+          configure_swift_rgw
           rgw
           ;;
         esac
