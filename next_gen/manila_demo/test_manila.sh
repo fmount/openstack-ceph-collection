@@ -4,68 +4,211 @@ RED='\033[0;31m'
 NC='\033[0m'
 TIME=5
 PREVIEW_TIME=20
-NAPP=0
+NAPP=1
 declare -A SHARES
-SHARES=(["share_nfs"]="nfs" ["cephfsshare"]="cephfs")
+#SHARES=(["share_nfs"]="nfs" ["share_cephfs"]="cephfs")
+SHARES=(["share_nfs"]="nfs")
 SIZE=1
+
+
 declare -A CLIENTS
-CLIENTS=(["192.168.130.25"]="10.10.10.16" ["192.168.130.26"]="10.10.10.17")
+CLIENTS=(["192.168.130.27"]="10.10.10.50" ["192.168.130.28"]="10.10.10.60")
 
 function test_mshare {
     echo
     echo "=> MANILA SHARE SERVICES"
-    oc rsh openstackclient openstack share service list | grep -vi log
+    oc rsh openstackclient openstack share service list
     echo
-    oc rsh openstackclient openstack share type create default False\
+    echo "=> MANILA POOL LIST"
+    oc rsh openstackclient openstack share pool list
+    sleep $TIME
+    echo "=> CREATE SHARE TYPES"
+    echo oc rsh openstackclient openstack share type create default False\
                   --extra-specs snapshot_support=True  \
-                  create_share_from_snapshot_support=True vendor_name=Ceph 2&>/dev/null
+                  create_share_from_snapshot_support=True vendor_name=Ceph
     if [ $NAPP -gt 0 ]; then
-        echo "=> CREATE NetApp SHARE TYPE"
-        oc rsh openstackclient openstack share type create bigboxtype False \
+        echo oc rsh openstackclient openstack share type create bigboxtype False \
                   --extra-specs snapshot_support=True  \
-                  revert_to_snapshot_support=True
-                  create_share_from_snapshot_support=True 2&>/dev/null
+                  revert_to_snapshot_support=True \
+                  create_share_from_snapshot_support=True
     fi
     echo
-    sleep $TIME
-    echo "=> MANILA POOL LIST"
-    oc rsh openstackclient openstack share pool list | grep -vi log
-    sleep $TIME
+    echo "=> MANILA SHARE TYPE LIST"
+    oc rsh openstackclient openstack share type list
     echo 
     echo "=> CREATE SHARE"
     for p in "${!SHARES[@]}"; do
         echo "oc rsh openstackclient openstack share create --name $p "${SHARES["$p"]}" $SIZE"
-        oc rsh openstackclient openstack share create --name $p "${SHARES["$p"]}" $SIZE
     done
     echo
+
     echo "=> LIST THE RESULTING SHARES"
-    oc rsh openstackclient openstack share list | grep -vi log
+    oc rsh openstackclient openstack share list
     sleep $TIME
     echo 
+
+    echo "=> SHOW SHARES LOCATION"
+    echo
+    for p in "${!SHARES[@]}"; do
+	echo "$p"
+	echo "-----"
+	oc rsh openstackclient openstack share export location list $p -c Path -f value
+	echo "-----"
+	echo
+    done
+
+    exit 1
+    # test_netapp_client
+    # test_nfs_client
+    # test_cephfs_client
+
+}
+
+function test_all_shares {
+    local client1="192.168.130.27"
+    local share_nfs="192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc"
+    local share_netapp="192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e"
+    # local share_cephfs=""
+    local share_cephfs="192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054"
+
     echo "=> CREATE ACCESS RULE"
-    share_id=$(oc rsh openstackclient openstack share list | grep -vi log | grep -E "share_nfs" | awk '{print $2}')
-    [ ! -z "$share_id" ] && oc rsh openstackclient openstack share access create share_nfs ip 192.168.130.25
+    oc rsh openstackclient openstack share access create share_nfs ip $client1
+    oc rsh openstackclient openstack share access create share_netapp ip $client1
+    #oc rsh openstackclient openstack share access create share_cephfs ip $client1
+    echo
+    sleep 3
+
+    echo "=> LIST ACCESS RULES"
+    for p in "${!SHARES[@]}"; do
+       oc rsh openstackclient openstack share access list $p
+    done
+    sleep $TIME
+    echo
+
+    sudo -u root ssh root@10.10.10.50 mkdir -p /mnt/share_{nfs,netapp,cephfs}
+    sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt/share_nfs
+    sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e /mnt/share_netapp
+    #sudo -u root ssh royt@10.10.10.50 mount -t cephfs ##
+    sudo -u root ssh root@10.10.10.50 mount -t cephfs 192.168.130.26:6789:/volumes/_nogroup/733bb2e6-a704-4632-b347-4401582a6331/a7bbf8fa-ef8f-4242-a5b2-3905e5606054 /mnt/share_cephfs
+
+    for p in "${!SHARES[@]}"; do
+        sudo -u root ssh root@10.10.10.50 touch /mnt/$p/test_file1
+        sudo -u root ssh root@10.10.10.50 touch /mnt/$p/test_file2
+        sudo -u root ssh root@10.10.10.50 touch /mnt/$p/test_file3
+	sleep 5
+        sudo -u root ssh root@10.10.10.50 tree /mnt
+	sleep 10
+        sudo -u root ssh root@10.10.10.50 umount /mnt/$p
+    done
+
+}
+
+function test_nfs_client {
+    local export_name="share_nfs"
+    local client1="192.168.130.27"
+    local client2="192.168.130.28"
+    local export_loc="192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc"
+
+    echo "=> CREATE ACCESS RULE"
+    oc rsh openstackclient openstack share access create $export_name ip $client1
+    echo
+    sleep 3
+
+    echo "=> LIST ACCESS RULES"
+    oc rsh openstackclient openstack share access list $export_name
+    sleep $TIME
+    echo
+
+    echo "=> MOUNT SHARE TO CLIENT NODE [192.168.130.27]"
+    echo
+    echo "[10.10.10.50] mount $export_loc"
+    sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt
+    #sudo -u root ssh root@10.10.10.50 "mount -t nfs $nfs_export /mnt"
+
+    echo "ssh root@10.10.10.16 touch /mnt/test1 /mnt/test2 /mnt/test3"
+    sudo -u root ssh root@10.10.10.50 touch /mnt/test1 /mnt/test2 /mnt/test3
+    sleep 5
+    echo "ssh root@10.10.10.50 echo $(date) > /mnt/test1"
+    #sudo -u root ssh root@10.10.10.50 echo $(date) >> /mnt/test1
+    sleep 5
+    echo "ssh root@10.10.10.50 ls -l /mnt"
+    sudo -u root ssh root@10.10.10.50 ls -l /mnt/
+    sleep 5
+    echo "ssh root@10.10.10.50 umount /mnt"
+    sudo -u root ssh root@10.10.10.50 umount /mnt
+
+    echo "=> [FAIL] - MOUNT SHARE TO THE SECOND CLIENT NODE [192.168.130.28]"
+    echo
+    echo "[10.10.10.60] mount $export_loc"
+    sudo -u root ssh root@10.10.10.60 mount -vvv -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt
+
+    #echo "=> CREATE ACCESS RULE ON THE SECOND NODE"
+    #oc rsh openstackclient openstack share access create $export_name ip $client2
+    #echo "=> MOUNT SHARE TO THE SECOND CLIENT NODE [192.168.130.28]"
+    #echo
+    #echo "[10.10.10.60] mount $export_loc"
+    #sudo -u root ssh root@10.10.10.60 mount -t nfs 192.168.130.21:/volumes/_nogroup/61139d4d-4f6b-4c6b-8966-a51c72ad8393/1d2562d5-1c5e-4fcf-92c0-e437032d74fc /mnt
+    #echo "ssh root@10.10.10.60 touch /mnt/test4"
+    #sudo -u root ssh root@10.10.10.60 touch /mnt/test4
+    #echo "ssh root@10.10.10.60 ls -l /mnt"
+    #sudo -u root ssh root@10.10.10.60 ls -l /mnt/
+    #sleep 5
+    #echo "ssh root@10.10.10.60 umount /mnt"
+    #sudo -u root ssh root@10.10.10.60 umount /mnt
+    #exit 1
+}
+
+function test_netapp_clients {
+
+    local export_name="share_netapp"
+    local client1="192.168.130.27"
+    local client2="192.168.130.28"
+    local export_loc="192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e"
+
+    echo "=> CREATE ACCESS RULE"
+    oc rsh openstackclient openstack share access create $export_name ip $client1
+    echo
+    sleep 3
+
+    echo "=> LIST ACCESS RULES"
+    oc rsh openstackclient openstack share access list $export_name
+    sleep $TIME
+    echo
+
+    echo "=> MOUNT SHARE TO CLIENT NODE [192.168.130.27]"
+    
+    echo
+    echo "[10.10.10.50] mount $export_loc"
+    sudo -u root ssh root@10.10.10.50 mount -t nfs 192.168.1.107:/share_4d8201d4_f667_4f7c_b004_8dd07f7d7a2e /mnt
+    #sudo -u root ssh root@10.10.10.50 "mount -t nfs $nfs_export /mnt"
+
+    echo "ssh root@10.10.10.50 touch /mnt/test_napp1 /mnt/test_napp2 /mnt/test_napp3"
+    sudo -u root ssh root@10.10.10.50 touch /mnt/test_napp1 /mnt/test_napp2 /mnt/test_napp3
+    sleep 5
+    echo "ssh root@10.10.10.50 ls -l /mnt"
+    sudo -u root ssh root@10.10.10.50 ls -l /mnt/
+    sleep 5
+    echo "ssh root@10.10.10.50 umount /mnt"
+    sudo -u root ssh root@10.10.10.50 umount /mnt
+}
+
+function test_cephfs_clients {
+    echo "=> CREATE ACCESS RULE"
+    #share_id=$(oc rsh openstackclient openstack share list| grep -E "share_nfs" | awk '{print $2}')
+    #[ ! -z "$share_id" ] && oc rsh openstackclient openstack share access create share_nfs ip 192.168.130.25
     echo oc rsh openstackclient openstack share access create share_nfs ip 192.168.130.25
     echo oc rsh openstackclient openstack share access create cephfsshare cephx alice
     echo
+
     echo "=> LIST ACCESS RULES"
     for share in "${!SHARES[@]}"; do
-        oc rsh openstackclient openstack share access list $share | grep -vi log
+        oc rsh openstackclient openstack share access list $share
     done
     sleep $TIME
     echo
-    echo "=> SHOW NFS LOCATION"
-    # TEST NFS
-    path=$(oc rsh openstackclient openstack share export location list share_nfs -c Path -f value | grep -vi log)
-    echo "  * Share share_nfs: $path"
-    test_clients "$path" "nfs"
 
-    #echo "=> SHOW CEPHFS LOCATION"
-    ## TEST NFS
-    #path=$(oc rsh openstackclient openstack share export location list cephfsshare -c Path -f value | grep -vi log)
-    #echo "  * Share cephfsshare: $path"
-    ##test_clients "$path" "cephfs"
 }
+
 
 function test_clients {
     nfs_export="$1"
@@ -137,7 +280,7 @@ function test_clients {
 function test_manila {
     declare -a share1=("/etc/ceph")
     declare -a share2=("/etc/ceph")
-    declare -a share3=("/etc/manila")
+    declare -a share3=("/etc/manila/manila.conf.d/")
 
     echo "---------------------"
     echo "MANILA PREVIEW"
@@ -156,7 +299,7 @@ function test_manila {
     printf "* Client nodes:\n"
     for client in "${!CLIENTS[@]}"; do
         printf "  * Node: ${RED}$client${NC}\n"
-        printf "  *  Mgmt: ${RED}${CLIENTS[$client]}${NC}\n"
+        printf "    * Mgmt: ${RED}${CLIENTS[$client]}${NC}\n"
     done
     echo "---------------------"
 
@@ -180,6 +323,14 @@ function test_manila {
     done
     fi
 
+    pod=$(oc get pods | awk '/share3/ {print $1}')
+    if [ -n "$pod" ]; then
+    for m in "${share3[@]}"; do
+        printf "Share3 instance: %s ${RED}$pod${NC}:${RED}$m${NC}\n"
+        oc exec -it "$pod" -- ls "$m"
+        echo "----------------------"
+    done
+    fi
     if [ $NAPP -gt 0 ]; then
         sleep $TIME
         sec=$(oc get secret | awk '/netapp/ {print $1}')
@@ -187,10 +338,15 @@ function test_manila {
             oc describe secret $sec
             echo "----------------------"
         fi
-    PROTO+=("netapp")
+	SHARES+=(["share_netapp"]="nfs")
     fi
     sleep 3
 }
 
-test_manila
-test_mshare
+# Intro - Show preview
+#test_manila
+# Stage 1 - Show manila resources
+#test_mshare
+# Stage 2 - Mount shares on a client
+test_all_shares
+
