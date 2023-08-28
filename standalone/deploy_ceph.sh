@@ -40,7 +40,7 @@ DEFAULT_PGP_NUM=8
 
 # RGW OPTIONS
 RGW_PORT=8080
-RGW_INGRESS=1
+RGW_INGRESS=0  # do not deploy the ingress daemon by default
 RGW_NET=${RGW_NET:-"$IP"}
 RGW_INGRESS_FPORT=8080
 RGW_INGRESS_MPORT=8999
@@ -153,13 +153,13 @@ cat > "$RGW_CONF" <<-EOF
     ceph config set global rgw_max_attr_size 1024
 EOF
     $SUDO "$CEPHADM" shell -m "$RGW_CONF" --fsid $FSID --config $CONFIG \
-        --keyring $KEYRING -- sh "$RGW_CONF"
+        --keyring $KEYRING -- sh /mnt/"$RGW_CONF"
 }
 
 function rgw() {
     $SUDO "$CEPHADM" shell --fsid $FSID --config $CONFIG \
         --keyring $KEYRING -- ceph orch apply rgw default \
-        "--network $RGW_NET --placement=$HOSTNAME count:1" --port "$RGW_PORT"
+        "--placement=$HOSTNAME count:1" --port "$RGW_PORT"
 
     if [ "$RGW_INGRESS" -eq 1 ]; then
       echo "[CEPHADM] Deploy rgw.default Ingress Service"
