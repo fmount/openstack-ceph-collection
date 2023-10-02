@@ -28,7 +28,7 @@ function crc_setup {
 }
 
 function crc_ssh {
-    ssh -i ~/.crc/machines/crc/id_ecdsa -0 StrictHostKeyChecking=no core@$(shell crc ip)
+    ssh -i ~/.crc/machines/crc/id_ecdsa -o StrictHostKeyChecking=no core@$(shell crc ip)
 }
 
 # An old workaround to include lib-common for not pushed changes

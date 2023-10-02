@@ -40,9 +40,6 @@ spec:
     - mountPath: /etc/openstack/secure.yaml
       name: openstack-config-secret
       subPath: secure.yaml
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: kube-api-access-dr42g
-      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   volumes:
@@ -54,26 +51,3 @@ spec:
     secret:
       defaultMode: 420
       secretName: openstack-config-secret
-  - name: kube-api-access-dr42g
-    projected:
-      defaultMode: 420
-      sources:
-      - serviceAccountToken:
-          expirationSeconds: 3607
-          path: token
-      - configMap:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          name: kube-root-ca.crt
-      - downwardAPI:
-          items:
-          - fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-            path: namespace
-      - configMap:
-          items:
-          - key: service-ca.crt
-            path: service-ca.crt
-          name: openshift-service-ca.crt
