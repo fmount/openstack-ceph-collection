@@ -1,0 +1,79 @@
+# This pod assumes at least mariadb && keystone are running in the ctlplane
+# and the associated openstack secrets (osp-secret and openstack-config) have
+# been created, as well as the configmap where clouds.yaml is stored.
+# It gets a cli that can be used to interact with the deployed components.
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    openshift.io/scc: anyuid
+  labels:
+    app: openstackclient
+  name: openstackclient
+  namespace: openstack
+spec:
+  containers:
+  - args:
+    - infinity
+    command:
+    - /bin/sleep
+    env:
+    - name: OS_CLOUD
+      value: default
+    image: quay.io/podified-antelope-centos9/openstack-openstackclient:current-podified
+    imagePullPolicy: IfNotPresent
+    name: openstackclient
+    resources: {}
+    securityContext:
+      capabilities:
+        drop:
+        - MKNOD
+      runAsGroup: 42401
+      runAsNonRoot: true
+      runAsUser: 42401
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/openstack/clouds.yaml
+      name: openstack-config
+      subPath: clouds.yaml
+    - mountPath: /etc/openstack/secure.yaml
+      name: openstack-config-secret
+      subPath: secure.yaml
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-dr42g
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: openstack-config
+    name: openstack-config
+  - name: openstack-config-secret
+    secret:
+      defaultMode: 420
+      secretName: openstack-config-secret
+  - name: kube-api-access-dr42g
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+      - configMap:
+          items:
+          - key: service-ca.crt
+            path: service-ca.crt
+          name: openshift-service-ca.crt
