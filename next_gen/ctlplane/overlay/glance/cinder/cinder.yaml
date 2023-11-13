@@ -1,0 +1,39 @@
+# Sample using Cinder as a glance backend
+apiVersion: core.openstack.org/v1beta1
+kind: OpenStackControlPlane
+metadata:
+  name: openstack
+spec:
+  glance:
+    template:
+      serviceUser: glance
+      containerImage: quay.io/podified-antelope-centos9/openstack-glance-api:current-podified
+      customServiceConfig: |
+        [DEFAULT]
+        enabled_backends = default_backend:cinder
+        debug = true
+        [glance_store]
+        default_backend = default_backend
+        [default_backend]
+        rootwrap_config = /etc/glance/rootwrap.conf
+        description = Default cinder backend
+        cinder_catalog_info = volumev3::internalURL
+        cinder_use_multipath = true
+        cinder_store_user_name = {{ .ServiceUser }}
+        cinder_store_password = {{ .ServicePassword }}
+        cinder_store_project_name = service
+      databaseInstance: openstack
+      databaseUser: glance
+      glanceAPIInternal:
+        debug:
+          service: false
+        preserveJobs: false
+        replicas: 1
+      glanceAPIExternal:
+        debug:
+          service: false
+        preserveJobs: false
+        replicas: 1
+      secret: osp-secret
+      storageClass: ""
+      storageRequest: 1G
