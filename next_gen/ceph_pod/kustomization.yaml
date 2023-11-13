@@ -6,12 +6,15 @@ namespace: openstack
 patches:
 - patch: |-
     - op: replace
-      path: /spec
+      path: /spec/containers/0/image
       value:
        containers:
-         - image: quay.io/ceph/ceph:v17
-    #- op: replace
-    #  path: /spec/containers/env/MON_IP
-    #  value: 192.168.130.11
+         - image: quay.io/ceph/ceph:v18
+    - op: replace
+      path: /metadata/namespace
+      value: $NAMESPACE
+    - op: replace
+      path: /metadata/annotations/k8s.v1.cni.cncf.io~1networks
+      value: $NETWORKS_ANNOTATION
   target:
     kind: Pod

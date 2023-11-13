@@ -8,7 +8,7 @@ metadata:
 spec:
   hostNetwork: true
   containers:
-   - image: quay.io/ceph/daemon:latest-quincy
+   - image: quay.io/ceph/daemon:latest-reef
      name: ceph
      env:
      - name: MON_IP
