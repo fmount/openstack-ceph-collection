@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ./ceph-pod.yaml
+- ./openstackclient.yaml
 namespace: openstack
 patches:
 - patch: |-
@@ -9,12 +9,9 @@ patches:
       path: /spec/containers/0/image
       value:
        containers:
-         - image: quay.io/ceph/ceph:v18
+         - image: quay.io/podified-antelope-centos9/openstack-openstackclient:current-podified
     - op: replace
       path: /metadata/namespace
-      value: $NAMESPACE
-    - op: replace
-      path: /metadata/annotations/k8s.v1.cni.cncf.io~1networks
-      value: $NETWORKS_ANNOTATION
+      value: openstack
   target:
     kind: Pod
