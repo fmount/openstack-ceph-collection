@@ -250,3 +250,14 @@ function clean_pods {
 function refresh_glance {
     oc get pods | grep -E "glance-(ext|int)" | awk '{print $1}' | xargs -n 1 oc delete pod
 }
+
+function list_pod_containers {
+    local pod="$1"
+    if [ -z "$pod" ]; then
+        echo "list_pod_containers <pod_name>"
+        exit 1
+    fi
+    for container in $(oc get pods "$pod" -o jsonpath='{.spec.containers[*].name}');
+        do echo $container;
+    done
+}
