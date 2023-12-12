@@ -40,6 +40,9 @@ spec:
     - mountPath: /etc/openstack/secure.yaml
       name: openstack-config-secret
       subPath: secure.yaml
+    - mountPath: /etc/pki/ca-trust/extracted/pem
+      name: ca-certs
+      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   volumes:
@@ -51,3 +54,7 @@ spec:
     secret:
       defaultMode: 420
       secretName: openstack-config-secret
+  - name: ca-certs
+    secret:
+      defaultMode: 292
+      secretName: combined-ca-bundle
