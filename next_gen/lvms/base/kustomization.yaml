@@ -1,0 +1,4 @@
+resources:
+  - ns.yaml
+  - subs.yaml
+  - operatorgroup.yaml
