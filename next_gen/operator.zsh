@@ -261,3 +261,18 @@ function list_pod_containers {
         do echo $container;
     done
 }
+
+function patch_csv {
+    local component="$1"
+    local namespace="openstack-operators"
+    local image="$2"
+    if [[ -z "$component" ]] || [[ -z "$image" ]]; then
+        echo "patch_csv <operator> <new_container>"
+        exit 1
+    fi
+    oc patch csv -n "$namespace" "$component"-operator.v0.0.1 --type='json' -p='[{"op":"replace", "path":"/spec/install/spec/deployments/0/spec/template/spec/containers/1/image", "value": "$image"}]'
+    # EXAMPLE:
+    #oc patch csv -n openstack-operators glance-operator.v0.0.1 --type='json' \
+    #  -p='[{"op":"replace", "path":"/spec/install/spec/deployments/0/spec/template/spec/containers/1/image", \
+    #     "value": "quay.io/fpantano/glance-operator:latest"}]'
+}
