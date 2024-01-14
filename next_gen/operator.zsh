@@ -8,6 +8,7 @@ GOROOT_DIR=/usr/lib/go/src/
 OPENSTACK=/usr/bin/openstack
 SAMPLES=$WORKDIR/samples
 CRC_BIN=/usr/local/bin/crc
+CRC_TARGET=$HOME/.crc
 KUBEADMIN_PWD=${KUBEADMIN_PWD:-"12345678"}
 PULL_SECRET_FILE=${PULL_SECRET_FILE:-$HOME"/.ssh/pull_secret"}
 
@@ -29,6 +30,19 @@ function crc_setup {
 
 function crc_ssh {
     ssh -i ~/.crc/machines/crc/id_ecdsa -o StrictHostKeyChecking=no core@$(shell crc ip)
+}
+
+function crc_add_disk {
+    local disk="$1"
+    if [[ -z "$disk" ]]; then
+        echo "crc_add_disk <disk_name> <disk_size>"
+        exit 1
+    fi
+    local disk_size=${4:-"10G"}
+    qemu-img create -f raw $CRC_TARGET/$disk $disk_size
+    dd if=/dev/zero of=$CRC_TARGET/vm$disk bs=1M count=1000 status=progress
+    sudo virsh attach-disk crc $CRC_TARGET/$disk $disk --config --cache none
+
 }
 
 # An old workaround to include lib-common for not pushed changes
