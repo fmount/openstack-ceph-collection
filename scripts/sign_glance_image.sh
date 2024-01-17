@@ -2,13 +2,13 @@
 #
 # This is based on: https://docs.openstack.org/glance/latest/user/signature.html
 
-openssl genrsa -out private_key.pem 2048
+openssl genrsa -out private_key.pem 1024
 openssl rsa -pubout -in private_key.pem -out public_key.pem
 openssl req -new -key private_key.pem -out cert_request.csr
 openssl x509 -req -days 14 -in cert_request.csr -signkey private_key.pem -out new_cert.crt
 
-# create the secret
-openstack secret store --name test --algorithm RSA --expiration 2026-06-29 --secret-type certificate --payload-content-type "application/octet-stream" --payload-content-encoding base64 --payload "$(base64 new_cert.crt)"
+# create the secret and get the cert_uuid
+cert_uuid=$(openstack secret store --name test --algorithm RSA --secret-type certificate --payload-content-type "application/octet-stream" --payload-content-encoding base64 --payload "$(base64 new_cert.crt)" -c "Secret href" -f value | cut -d '/' -f 6)
 
 function build_image_signature {
     echo This is a dodgy image > myimage
@@ -29,6 +29,5 @@ function create_signed_image {
 }
 
 build_image_signature
-cert_uuid=$(openstack secret list -c Secret\ href -f value | cut -d '/' -f 6)
 image_signature=$(cat myimage.signature.b64)
 create_signed_image "$image_signature" "$cert_uuid"
