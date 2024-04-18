@@ -290,3 +290,7 @@ function patch_csv {
     #  -p='[{"op":"replace", "path":"/spec/install/spec/deployments/0/spec/template/spec/containers/1/image", \
     #     "value": "quay.io/fpantano/glance-operator:latest"}]'
 }
+
+function rm_marketplace {
+    oc delete catalogsource --all -n openshift-marketplace
+}
