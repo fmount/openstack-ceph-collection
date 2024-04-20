@@ -10,7 +10,6 @@ metadata:
   labels:
     app: openstackclient
   name: openstackclient
-  namespace: openstack
 spec:
   containers:
   - args:
@@ -20,17 +19,19 @@ spec:
     env:
     - name: OS_CLOUD
       value: default
-    image: quay.io/podified-antelope-centos9/openstack-openstackclient:current-podified
     imagePullPolicy: IfNotPresent
     name: openstackclient
     resources: {}
     securityContext:
-      capabilities:
-        drop:
-        - MKNOD
-      runAsGroup: 42401
-      runAsNonRoot: true
-      runAsUser: 42401
+       capabilities:
+         drop:
+         - ALL
+       runAsGroup: 42401
+       runAsNonRoot: true
+       runAsUser: 42401
+       allowPrivilegeEscalation: false
+       seccompProfile:
+         type: RuntimeDefault
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
