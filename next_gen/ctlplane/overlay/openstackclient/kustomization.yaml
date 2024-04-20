@@ -7,11 +7,24 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/containers/0/image
-      value:
-       containers:
-         - image: quay.io/podified-antelope-centos9/openstack-openstackclient:current-podified
+      value: quay.io/podified-antelope-centos9/openstack-openstackclient:current-podified
+    - op: add
+      path: /metadata/namespace
+      value: openstack
     - op: replace
       path: /metadata/namespace
       value: openstack
+    - op: add
+      path: /spec/volumes/0
+      value:
+       configMap:
+         name: openstack-scripts
+         defaultMode: 755
+       name: openstack-scripts
+    - op: add
+      path: /spec/containers/0/volumeMounts/0
+      value:
+        mountPath: /home/cloud-admin/scripts
+        name: openstack-scripts
   target:
     kind: Pod
