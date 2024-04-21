@@ -1,16 +1,19 @@
 # OPENSTACKCLIENT
 
-The openstackclient is used to interact with an existing controlplane, and it
-can be used in kuttl tests to execute scripts that are supposed to verify that
-a given functionality works as expected.
+The openstackclient is used to interact with an existing (even minimal)
+control plane, and it can be used by kuttl tests to execute scripts that are
+supposed to verify that a given functionality works as expected.
 
 ## Deploy the openstackclient via kustomize
 
-It is possible to inject script via kustomize, and we have two choices:
-- inject a particular script to test a feature or verify there's no regressions
-- inject the script directory that contains the whole set of scripts
+It is possible to inject scripts providing the right mounts to the
+`openstackclient` via [kustomize](https://kustomize.io).
+In general, there are two allowed/supported scenarios:
+- inject a particular script to test a feature and verify there are no regressions
+- inject the script directory that contains the whole set of scripts: an external
+  test suite will select the right one as needed
 
-In case you want to inject a particular script, add the following in the
+In case you want to inject a particular script, add the following snippet in the
 kustomization.yaml file:
 
 ```
@@ -29,11 +32,11 @@ kustomization.yaml file:
     subPath: import-image-container.sh
 ```
 
-The snippet above adds the `import-image-container` script to the `cloud-admin`
-home directory, and it will be available under the defined subPath.
-If the purpose is to test multiple features, it is possible to inject the entire
-`scripts` directory and select the script that should be executed from an external
-test suite.
+The snippet above assumes the goal is to inject the script called
+`import-image-container.sh` to the `cloud-admin` `$HOME` directory, and it will
+be available under the defined `subPath`. If the purpose is to test multiple
+features, it is possible to inject the entire `scripts` directory and select
+the script that should be executed from an external test suite:
 
 ```
 - op: add
@@ -53,6 +56,26 @@ test suite.
 Without a `subPath`, we can mount all the scripts provided by the `ConfigMap`
 within a `scripts` directory.
 This represents the default approach for kuttl tests.
+
+All the potential changes (`add/remove/replace` fields) are managed by
+`kustomize`, and the `openstackclient.yaml` definition should not be changed.
+Once everything is ready, the `openstackclient` `Pod` can be deployed with the
+following command:
+
+```bash
+oc -n <namespace> kustomize $pwd/openstackclient | oc apply -f -
+```
+
+**Note:**
+
+All the theory describe above assumes the `scripts` directory is used as source
+to build a `ConfigMap` that is then mounted to the `Pod`.
+**Before** going through the described steps, make sure a `ConfigMap` containing
+the scripts directory exists. It can be built with the following command:
+
+```bash
+oc -n <namespace> cm openstack-scripts create --from-file=<path/to/scripts/directory>
+```
 
 ## Define a new kuttl test
 
