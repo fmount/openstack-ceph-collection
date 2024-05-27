@@ -1,0 +1,4 @@
+python-openstackclient
+python-tempestconf
+tempest
+os-testr
