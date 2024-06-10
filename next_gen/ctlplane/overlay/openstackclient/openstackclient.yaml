@@ -13,9 +13,12 @@ metadata:
 spec:
   containers:
   - args:
-    - infinity
+    - --single-child
+    - --
+    - -c
+    - sleep infinity
     command:
-    - /bin/sleep
+    - /usr/bin/dumb-init
     env:
     - name: OS_CLOUD
       value: default
