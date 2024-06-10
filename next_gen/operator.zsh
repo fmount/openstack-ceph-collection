@@ -294,3 +294,16 @@ function patch_csv {
 function rm_marketplace {
     oc delete catalogsource --all -n openshift-marketplace
 }
+
+function kuttl_run {
+    OPERATOR=$1
+    NAMESPACE=${$2:-openstack}
+    if [[ -z "$OPERATOR" ]];  then
+        echo "kuttl_run <operator_path> <namespace>"
+        exit 1
+    fi
+
+    kubectl-kuttl test --config $OPERATOR/kuttl-test.yaml \
+        $OPERATOR/test/kuttl/tests/ --namespace $NAMESPACE | tee -a $HOME/kuttl.log
+
+}
