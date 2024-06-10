@@ -297,10 +297,10 @@ function rm_marketplace {
 
 function kuttl_run {
     OPERATOR=$1
-    NAMESPACE=${$2:-openstack}
+    NAMESPACE=${2:-openstack}
     if [[ -z "$OPERATOR" ]];  then
         echo "kuttl_run <operator_path> <namespace>"
-        exit 1
+        return
     fi
 
     kubectl-kuttl test --config $OPERATOR/kuttl-test.yaml \
