@@ -1,6 +1,7 @@
 #!/bin/bash
 
 index=${1:-"0"}
+size=${2:-"7"}
 
 function setup_loopback {
     major=$(grep loop /proc/devices | cut -c3)
@@ -9,11 +10,11 @@ function setup_loopback {
 }
 
 function build_ceph_osd {
-    sudo dd if=/dev/zero of=/var/lib/ceph-osd-"${index}".img bs=1 count=0 seek=7G
+    sudo dd if=/dev/zero of=/var/lib/ceph-osd-"${index}".img bs=1 count=0 seek="${size}"G
     sudo losetup /dev/loop"${index}" /var/lib/ceph-osd-"${index}".img
     sudo pvcreate  /dev/loop"${index}"
     sudo vgcreate ceph_vg_"${index}" /dev/loop"${index}"
-    sudo lvcreate -n ceph_lv_data -l +100%FREE ceph_vg
+    sudo lvcreate -n ceph_lv_data -l +100%FREE ceph_vg_"${index}"
 }
 
 function clean_ceph_osd {
