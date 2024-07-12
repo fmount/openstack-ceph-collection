@@ -24,8 +24,8 @@ MIN_OSDS=1
 DEBUG=0
 # NFS OPTIONS
 FSNAME=${FSNAME:-'cephfs'}
-NFS_INGRESS=1
-NFS_PORT=12345
+NFS_INGRESS=0
+NFS_PORT=${NFS_PORT:-2049}
 NFS_INGRESS_FPORT=20049
 NFS_INGRESS_MPORT=9000
 NFS_INGRESS_SPEC="nfs_ingress.yml"
@@ -322,6 +322,24 @@ function prereq() {
 
 }
 
+function k8s_secret() {
+    KEY=$(cat /etc/ceph/ceph.client.openstack.keyring | base64 -w 0)
+    CONF=$(cat /etc/ceph/ceph.conf | base64 -w 0)
+
+cat <<EOF > "$HOME"/ceph_secret.yaml
+apiVersion: v1
+data:
+  ceph.client.openstack.keyring: $KEY
+  ceph.conf: $CONF
+kind: Secret
+metadata:
+  name: ceph-conf-files
+  namespace: openstack
+type: Opaque
+EOF
+
+}
+
 function usage() {
     # Display Help
     # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
@@ -582,4 +600,8 @@ admin socket = /var/run/ceph/\$cluster-\$type.\$id.\$pid.\$cctid.asok
 keyring = $KEY_EXPORT_DIR/$NFS_CLIENT_NAME.keyring
 EOF
 echo "Client config exported: $CLIENT_CONFIG"
+fi
+
+if [ "$K8S" -eq 1 ]; then
+k8s_secret
 fi
