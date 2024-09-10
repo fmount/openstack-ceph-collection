@@ -58,6 +58,9 @@ declare -A INGRESS_IMAGES
 INGRESS_IMAGES[haproxy]='2.3'
 INGRESS_IMAGES[keepalived]='2.1.5'
 
+# SET K8S to 1 to build a Ceph secret containing both ceph.conf and keyring
+K8S=0
+
 # ADDITIONAL HOSTS
 declare -A HOSTS
 DEFALT_CEPH_PUB=/etc/ceph/ceph.pub
