@@ -398,6 +398,7 @@ function external_rook() {
     $SUDO python3 "$EXPORT_CLUSTER_RESOURCES" --ceph-conf /etc/ceph/ceph.conf \
         --keyring /etc/ceph/ceph.client.admin.keyring \
         --rbd-data-pool-name "$RBD_ROOK_POOL_NAME" \
+        --run-as-user client.admin \
         --output "$HOME/$EXPORT_CLUSTER_RESOURCES_FILE"
     fi
     # 4. Create the Secret required for rook
