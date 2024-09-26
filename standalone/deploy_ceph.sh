@@ -372,7 +372,7 @@ EOF
 }
 
 function rook_storage_cluster_secret() {
-    ROOK_DUMP=$(cat "$HOME"/rook-details.json)
+    ROOK_DUMP=$(cat "$HOME"/rook-details.json | base64 -w 0)
 cat <<EOF > "$HOME"/rook-secret.yaml
 apiVersion: v1
 data:
@@ -380,7 +380,7 @@ data:
 kind: Secret
 metadata:
   name: rook-external
-  namespace: openstack
+  namespace: rook-ceph
 type: Opaque
 EOF
 }
