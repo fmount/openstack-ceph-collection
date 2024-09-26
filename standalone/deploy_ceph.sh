@@ -60,11 +60,11 @@ INGRESS_IMAGES[keepalived]='2.1.5'
 
 # SET K8S to 1 to build a Ceph secret containing both ceph.conf and keyring
 K8S=0
-EXTERNAL_ROOK=0
+EXTERNAL_ROOK=1
 ROOK_CLUSTER_NAME=${ROOK_CLUSTER_NAME:-"ocs-external-storagecluster"}
 ROOK_NAMESPACE="${ROOK_NAMESPACE:-"openshift-storage"}"
-EXPORT_CLUSTER_RESOURCES_FILE="${EXPORT_CLUSTER_RESOURCES_FILE:-"rook-ceph-external-cluster-details.yaml"}"
-RBD_ROOK_POOL_NAME="${RBD_ROOK_POOL_NAME:-"volumes"}"
+EXPORT_CLUSTER_RESOURCES_FILE="rook-details.yaml"
+RBD_ROOK_POOL_NAME="${RBD_ROOK_POOL_NAME:-"rook"}"
 
 # ADDITIONAL HOSTS
 declare -A HOSTS
@@ -349,15 +349,15 @@ EOF
 
 
 function install_export_cluster_resources_script() {
-    curl -o create-external-cluster-resources https://raw.githubusercontent.com/rook/rook/master/deploy/examples/create-external-cluster-resources.py
-    $SUDO mv create-external-cluster-resources $TARGET_BIN
-    $SUDO chmod +x $TARGET_BIN/create-external-cluster-resources
+    curl -o rook-create https://raw.githubusercontent.com/rook/rook/master/deploy/examples/create-external-cluster-resources.py
+    $SUDO mv rook-create $TARGET_BIN
+    $SUDO chmod +x $TARGET_BIN/rook-create
     echo "[INSTALL EXTERNAL_ROOK SCRIPTS] - Rook scripts are ready"
 }
 
 function rook_storage_cluster() {
 
-cat <<EOF > "$HOME"/ceph_external_rook.yaml
+cat <<EOF > "$HOME"/rook-external.yaml
 apiVersion: ocs.openshift.io/v1
 kind: StorageCluster
 metadata:
@@ -372,19 +372,17 @@ EOF
 }
 
 function rook_storage_cluster_secret() {
-    ROOK_DUMP=$(cat "$HOME"/rook-ceph-external-cluster-details.yaml)
-cat <<EOF > "$HOME"/rook-ceph-external-cluster-details.yaml
+    ROOK_DUMP=$(cat "$HOME"/rook-details.yaml)
+cat <<EOF > "$HOME"/rook-secret.yaml
 apiVersion: v1
 data:
   external_cluster_details: $ROOK_DUMP
 kind: Secret
 metadata:
-  name: ceph-conf-files
+  name: rook-external
   namespace: openstack
 type: Opaque
 EOF
-
-oc create -f "$HOME/rook-ceph-external-cluster-details.yaml"
 }
 
 function external_rook() {
@@ -394,12 +392,13 @@ function external_rook() {
     # 2. Download the create-external-cluster-resources.py script
     if [ -z "$EXPORT_CLUSTER_RESOURCES" ]; then
         install_export_cluster_resources_script
-        EXPORT_CLUSTER_RESOURCES=${TARGET_BIN}/create-external-cluster-resources
+        EXPORT_CLUSTER_RESOURCES=${TARGET_BIN}/rook-create
     # 3. Run the python script
-        python3 "$EXPORT_CLUSTER_RESOURCES" --ceph-conf /etc/ceph/ceph.conf \
-            --keyring /etc/ceph/ceph.client.admin.keyring \
-            --rbd-data-pool-name "$RBD_ROOK_POOL_NAME" \
-            --output "$HOME/$EXPORT_CLUSTER_RESOURCES_FILE"
+    echo "Extract Ceph cluster details"
+    $SUDO python3 "$EXPORT_CLUSTER_RESOURCES" --ceph-conf /etc/ceph/ceph.conf \
+        --keyring /etc/ceph/ceph.client.admin.keyring \
+        --rbd-data-pool-name "$RBD_ROOK_POOL_NAME" \
+        --output "$HOME/$EXPORT_CLUSTER_RESOURCES_FILE"
     fi
     # 4. Create the Secret required for rook
     rook_storage_cluster_secret
