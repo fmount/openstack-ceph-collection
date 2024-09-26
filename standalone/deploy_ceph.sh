@@ -63,7 +63,7 @@ K8S=0
 EXTERNAL_ROOK=1
 ROOK_CLUSTER_NAME=${ROOK_CLUSTER_NAME:-"ocs-external-storagecluster"}
 ROOK_NAMESPACE="${ROOK_NAMESPACE:-"openshift-storage"}"
-EXPORT_CLUSTER_RESOURCES_FILE="rook-details.yaml"
+EXPORT_CLUSTER_RESOURCES_FILE="rook-details.json"
 RBD_ROOK_POOL_NAME="${RBD_ROOK_POOL_NAME:-"rook"}"
 
 # ADDITIONAL HOSTS
@@ -372,7 +372,7 @@ EOF
 }
 
 function rook_storage_cluster_secret() {
-    ROOK_DUMP=$(cat "$HOME"/rook-details.yaml)
+    ROOK_DUMP=$(cat "$HOME"/rook-details.json)
 cat <<EOF > "$HOME"/rook-secret.yaml
 apiVersion: v1
 data:
