@@ -63,7 +63,7 @@ K8S=0
 EXTERNAL_ROOK=1
 ROOK_CLUSTER_NAME=${ROOK_CLUSTER_NAME:-"ocs-external-storagecluster"}
 ROOK_NAMESPACE="${ROOK_NAMESPACE:-"openshift-storage"}"
-EXPORT_CLUSTER_RESOURCES_FILE="rook-details.json"
+EXPORT_CLUSTER_RESOURCES_FILE="rook-env-vars.sh"
 RBD_ROOK_POOL_NAME="${RBD_ROOK_POOL_NAME:-"rook"}"
 
 # ADDITIONAL HOSTS
@@ -358,6 +358,8 @@ function install_export_cluster_resources_script() {
 function rook_storage_cluster() {
 
 cat <<EOF > "$HOME"/rook-external.yaml
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
 apiVersion: ocs.openshift.io/v1
 kind: StorageCluster
 metadata:
@@ -367,7 +369,6 @@ spec:
   externalStorage:
     enable: true
   labelSelector: {}
-}
 EOF
 }
 
@@ -393,18 +394,24 @@ function external_rook() {
     if [ -z "$EXPORT_CLUSTER_RESOURCES" ]; then
         install_export_cluster_resources_script
         EXPORT_CLUSTER_RESOURCES=${TARGET_BIN}/rook-create
+    fi
     # 3. Run the python script
     echo "Extract Ceph cluster details"
     $SUDO python3 "$EXPORT_CLUSTER_RESOURCES" --ceph-conf /etc/ceph/ceph.conf \
         --keyring /etc/ceph/ceph.client.admin.keyring \
         --rbd-data-pool-name "$RBD_ROOK_POOL_NAME" \
-        --run-as-user client.admin \
+        --run-as-user client.rook --format bash \
         --output "$HOME/$EXPORT_CLUSTER_RESOURCES_FILE"
-    fi
-    # 4. Create the Secret required for rook
-    rook_storage_cluster_secret
-    # 5. Create the StorageCluster
+    # 4. Patch the client.rook keyring to allow access to the rook pool
+    $SUDO "$CEPHADM" shell -- ceph auth caps client.rook mds "allow *" mon "allow *" osd "allow rwx pool=$RBD_ROOK_POOL_NAME"
+    # 5. Create the StorageCluster CR
     rook_storage_cluster
+    # 6. Guide
+    echo "External ROOK - Next steps:"
+    echo "1. Copy the rook-env-vars script from $HOME/rook-env-vars.sh to the OpenShift client"
+    echo "2. Get [import-external-cluster.sh](https://github.com/rook/rook/blob/master/deploy/examples/import-external-cluster.sh) script"
+    echo "3. On the OpenShift client node, run: source rook-env-vars.sh && ./import-external-cluster.sh"
+
 }
 
 function usage() {
