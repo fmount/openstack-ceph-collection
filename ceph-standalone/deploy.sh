@@ -407,6 +407,7 @@ function external_rook() {
     # 5. Create the StorageCluster CR
     rook_storage_cluster
     # 6. Guide
+    echo
     echo "External ROOK - Next steps:"
     echo "1. Copy the rook-env-vars script from $HOME/rook-env-vars.sh to the OpenShift client"
     echo "2. Get [import-external-cluster.sh](https://github.com/rook/rook/blob/master/deploy/examples/import-external-cluster.sh) script"
@@ -416,7 +417,7 @@ function external_rook() {
 
 function usage() {
     # Display Help
-    # ./deploy_ceph.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
+    # ./deploy.sh -c quay.io/ceph/ceph:v16.2.6 -i 192.168.121.205 \
     #    -p volumes:rbd -p images -s rgw -s nfs -s mds -d /dev/ceph_vg/ceph_lv_data
     echo "Deploy a standalone Ceph cluster."
     echo
