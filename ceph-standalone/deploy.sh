@@ -14,7 +14,7 @@ CONTAINER_IMAGE=${CONTAINER_IMAGE:-'quay.io/ceph/ceph:v18.1'}
 IP=${IP:-'127.0.0.1'}
 DEVICES=()
 SERVICES=()
-KEYS=("client.openstack") # at least the client.openstack default key should be created
+KEYS=("client.openstack" "client.rook") # at least the client.openstack default key should be created
 KEY_EXPORT_DIR="/etc/ceph"
 # DEVICES=("/dev/ceph_vg/ceph_lv_data")
 # SERVICES=("RGW" "MDS" "NFS") # monitoring is removed for now
@@ -406,13 +406,13 @@ function external_rook() {
     $SUDO "$CEPHADM" shell -- ceph auth caps client.rook mds "allow *" mon "allow *" osd "allow rwx pool=$RBD_ROOK_POOL_NAME"
     # 5. Create the StorageCluster CR
     rook_storage_cluster
-    # 6. Guide
+    # 6. Guide the user to the next step
     echo
     echo "External ROOK - Next steps:"
     echo "1. Copy the rook-env-vars script from $HOME/rook-env-vars.sh to the OpenShift client"
-    echo "2. Get [import-external-cluster.sh](https://github.com/rook/rook/blob/master/deploy/examples/import-external-cluster.sh) script"
+    echo "2. Get [import-external-cluster.sh](https://raw.githubusercontent.com/rook/rook/refs/heads/master/deploy/examples/import-external-cluster.sh) script"
     echo "3. On the OpenShift client node, run: source rook-env-vars.sh && ./import-external-cluster.sh"
-
+    echo
 }
 
 function usage() {
