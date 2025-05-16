@@ -32,7 +32,7 @@ alias m='make manifests && make generate && make'
 alias mt='make test GINKGO_ARGS="--output-interceptor-mode=none"'
 
 function crc_ssh {
-    ssh -i ~/.crc/machines/crc/id_ecdsa -o StrictHostKeyChecking=no core@$(shell crc ip)
+    ssh -i ~/.crc/machines/crc/id_ed25519 -o StrictHostKeyChecking=no core@$(shell crc ip)
 }
 
 function crc_add_disk {
