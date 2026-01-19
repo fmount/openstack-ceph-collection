@@ -27,13 +27,21 @@ if __name__ == "__main__":
             f.close()
         pprint(d[1])
     except OSError as oe:
-        print(oe)
+        print(f"File error: {oe}")
+        sys.exit(1)
+    except json.JSONDecodeError as je:
+        print(f"Invalid JSON format in {OPTS.log}: {je}")
+        print("The file appears to contain non-JSON data. Please check if it's the correct log file.")
+        sys.exit(1)
+    except (IndexError, KeyError) as ie:
+        print(f"Unexpected data structure in {OPTS.log}: {ie}")
+        print("The JSON data doesn't match the expected format.")
         sys.exit(1)
 
-##################################################
+########################################################
 #
 # USAGE:
 #
-# python prettyprint.py --log /tmp/ceph_health.log
+# python ceph_log_process.py --log /tmp/ceph_health.log
 #
-##################################################
+########################################################
