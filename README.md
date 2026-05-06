@@ -12,6 +12,19 @@ for each OpenStack and Ceph cycle.
 | Zed          | Quincy         |
 
 
+## DevStack with Ceph (kcli plan)
+
+A [kcli](https://github.com/karmab/kcli) plan that provisions a VM
+and bootstraps [DevStack](https://docs.openstack.org/devstack/latest/) with
+[devstack-plugin-ceph](https://opendev.org/openstack/devstack-plugin-ceph) (cephadm backend).
+
+```bash
+kcli create plan -f devstack/plan/devstack.yml
+```
+
+See [devstack/plan/](devstack/plan/) for details.
+
+
 ## Deploy a TripleO lab
 
 - Use [tripleo-lab overrides](tripleo-lab) to deploy an OpenStack environment
@@ -41,14 +54,3 @@ playbooks can be run without the complexity of the whole TripleO context.
 
 Those playbooks can be executed via the [build_env.sh](https://github.com/fmount/tripleo-xena/tree/master/cephadm_deploy)
 script and a multinode Ceph cluster can be deployed in minutes, without any TripleO interaction.
-
-
-## Directord / Task-core (hackfest and POC)
-
-The purpose of this section is put the hands on the directord/task-core tools presented
-at the TripleO Yoga PTG.
-The first section/tutorial is about deploying a couple of nodes (Controller and Compute)
-and run the OpenStack services on them, then, later in the document, there's an attempt
-of deploying Ceph (triggering cephadm) using the new approach.
-
-The work is described [here](https://github.com/fmount/tripleo-xena/tree/master/directord)

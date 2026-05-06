@@ -1,3 +1,0 @@
-[submodule "tripleo-ceph"]
-	path = tripleo-ceph
-	url = git@github.com:fmount/tripleo-ceph.git
