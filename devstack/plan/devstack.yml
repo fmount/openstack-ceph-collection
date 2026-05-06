@@ -6,9 +6,12 @@ parameters:
   prefix: devstack
   numcpus: 4
   memory: 16384
-  image: ubuntu2004
+  disk: 50
+  osd_disk: 20
+  image: ubuntunoble
   notify: false
   admin_password: iamgroot
+  ceph_release: reef
 
 {% for number in range(0, nodes) %}
 {{ prefix }}-node-0{{ number }}:
@@ -21,14 +24,14 @@ parameters:
  nets:
   - {{ network }}
  disks:
-   - size: 20
+   - size: {{ disk }}
+   - size: {{ osd_disk }}
+   - size: {{ osd_disk }}
  pool: {{ pool }}
  cmds:
- - sed -i "s/SELINUX=enforcing/SELINUX=permissive/" /etc/selinux/config
- - setenforce 0
- - echo {{ admin_password  }} | passwd --stdin root
+ - echo 'root:{{ admin_password }}' | chpasswd
  - hostnamectl set-hostname {{ prefix }}-node-0{{ number }}
  - hostnamectl set-hostname --transient {{ prefix }}-node-0{{ number }}
- #scripts:
- # - bootstrap.sh
+ scripts:
+  - bootstrap.sh
 {% endfor %}
