@@ -4,10 +4,6 @@ apt-get update
 apt-get -y install python3 chrony lvm2 podman vim jq tmux curl git sudo
 
 # devstack
-useradd -s /bin/bash -d /opt/stack -m stack
-chmod +x /opt/stack
-echo "stack ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/stack
-
 sudo -u stack git clone https://opendev.org/openstack/devstack /opt/stack/devstack
 
 cat > /opt/stack/devstack/local.conf <<'LOCALCONF'

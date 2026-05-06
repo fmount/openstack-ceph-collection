@@ -8,10 +8,9 @@ parameters:
   memory: 16384
   disk: 50
   osd_disk: 20
-  image: ubuntunoble
+  image: ubuntu2404
   notify: false
-  admin_password: iamgroot
-  ceph_release: reef
+  ssh_key: ~/.ssh/id_rsa.pub
 
 {% for number in range(0, nodes) %}
 {{ prefix }}-node-0{{ number }}:
@@ -21,6 +20,8 @@ parameters:
  reservedns: true
  sharedkey: true
  domain: {{ domain }}
+ keys:
+  - {{ ssh_key }}
  nets:
   - {{ network }}
  disks:
@@ -28,8 +29,13 @@ parameters:
    - size: {{ osd_disk }}
    - size: {{ osd_disk }}
  pool: {{ pool }}
+ files:
+  - path: /etc/sudoers.d/stack
+    content: "stack ALL=(ALL) NOPASSWD: ALL"
+    mode: "0440"
  cmds:
- - echo 'root:{{ admin_password }}' | chpasswd
+ - useradd -s /bin/bash -d /opt/stack -m stack || true
+ - chmod +x /opt/stack
  - hostnamectl set-hostname {{ prefix }}-node-0{{ number }}
  - hostnamectl set-hostname --transient {{ prefix }}-node-0{{ number }}
  scripts:
